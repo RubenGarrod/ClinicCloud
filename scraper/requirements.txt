@@ -1,0 +1,11 @@
+scrapy==2.10.0
+psycopg2-binary==2.9.7
+sqlalchemy==2.0.21
+python-dotenv==1.0.0
+schedule==1.2.0
+sentence-transformers==2.2.2
+huggingface_hub==0.14.1
+transformers==4.26.0
+torch>=1.10.0
+twisted
+numpy>=1.20.0
