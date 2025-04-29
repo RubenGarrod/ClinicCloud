@@ -2,7 +2,7 @@ import os
 import logging
 from typing import Dict, Any, Optional, List, Tuple
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
-import torch
+import torch # type: ignore
 from threading import Lock
 import re
 

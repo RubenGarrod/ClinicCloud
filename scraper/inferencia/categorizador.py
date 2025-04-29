@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List, Tuple, Optional
 import re
-import torch
+import torch # type: ignore
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from threading import Lock
 

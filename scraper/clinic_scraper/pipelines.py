@@ -6,9 +6,9 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-import psycopg2
+import psycopg2 # type: ignore
 from datetime import datetime
-import numpy as np
+import numpy as np # type: ignore
 import traceback
 import os
 import logging
@@ -84,7 +84,7 @@ class PostgreSQLPipeline:
             
             # Inicializar el modelo de embedding cuando ya estamos seguros que todo está bien
             try:
-                from sentence_transformers import SentenceTransformer
+                from sentence_transformers import SentenceTransformer # type: ignore
                 self.model = SentenceTransformer('all-MiniLM-L6-v2')
                 spider.logger.info("Modelo SentenceTransformer cargado correctamente")
             except ImportError as e:
