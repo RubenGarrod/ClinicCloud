@@ -12,6 +12,7 @@ import numpy as np
 import traceback
 import os
 import logging
+from inferencia.categorizador import obtener_mejor_categoria, obtener_categorias_recomendadas
 
 # Configura un logger específico
 logger = logging.getLogger('clinic_scraper.pipelines')
@@ -67,17 +68,19 @@ class PostgreSQLPipeline:
             columnas = {col[0]: col[1] for col in self.cursor.fetchall()}
             spider.logger.info(f"Estructura de la tabla 'documento': {columnas}")
             
-            # Asegurarse de que existe la categoría "Sin categoría"
+            # Asegurarse de que existe la categoría "Medicina General"
             self.cursor.execute(
                 "INSERT INTO categoria (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING",
-                ("Sin categoría",)
+                ("Medicina General",)
             )
             self.connection.commit()
             
-            # Obtener el ID de "Sin categoría" para usarlo como fallback
-            self.cursor.execute("SELECT id FROM categoria WHERE nombre = %s", ("Sin categoría",))
+            self.cursor.execute("SELECT id FROM categoria WHERE nombre = %s", ("Medicina General",))
             self.categoria_default_id = self.cursor.fetchone()[0]
-            spider.logger.info(f"ID de categoría 'Sin categoría': {self.categoria_default_id}")
+            spider.logger.info(f"ID de categoría 'Medicina General': {self.categoria_default_id}")
+            
+            # Pre-crear las categorías médicas principales
+            self._crear_categorias_principales(spider)
             
             # Inicializar el modelo de embedding cuando ya estamos seguros que todo está bien
             try:
@@ -102,17 +105,44 @@ class PostgreSQLPipeline:
             self.connection.close()
         spider.logger.info("Conexión a la base de datos cerrada")
     
-    def _get_categoria_id(self, termino_busqueda, spider):
+    def _crear_categorias_principales(self, spider):
+        """Crea las categorías médicas principales en la base de datos"""
+        categorias_principales = [
+            "Oncología", "Cardiología", "Neurología", "Endocrinología", "Gastroenterología",
+            "Neumología", "Nefrología", "Infectología", "Inmunología", "Hematología",
+            "Dermatología", "Pediatría", "Geriatría", "Obstetricia y Ginecología",
+            "Reumatología", "Oftalmología", "Otorrinolaringología", "Psiquiatría",
+            "Traumatología", "Urología", "Genética Médica", "Medicina General"
+        ]
+        
         try:
-            categorias = {
-                'diabetes treatment': 'Diabetes',
-                'cancer therapy': 'Oncología',
-                'cardiovascular disease': 'Cardiología',
-                'antibiotic resistance': 'Microbiología',
-                'neurological disorders': 'Neurología'
-            }
+            for categoria in categorias_principales:
+                self.cursor.execute(
+                    "INSERT INTO categoria (nombre) VALUES (%s) ON CONFLICT (nombre) DO NOTHING",
+                    (categoria,)
+                )
+            self.connection.commit()
+            spider.logger.info(f"Categorías médicas principales creadas: {len(categorias_principales)}")
+        except Exception as e:
+            spider.logger.error(f"Error al crear categorías principales: {e}")
+            self.connection.rollback()
+    
+    def _get_categoria_id(self, titulo, abstract, spider):
+        """
+        Obtiene o crea una categoría apropiada basada en el contenido del documento
+        
+        Args:
+            titulo: Título del documento
+            abstract: Abstract o resumen del documento
+            spider: Instancia del spider para logging
             
-            categoria_nombre = categorias.get(termino_busqueda, 'Sin categoría')
+        Returns:
+            ID de la categoría en la base de datos
+        """
+        try:
+            # Usar el motor de inferencia para determinar la categoría
+            categoria_nombre = obtener_mejor_categoria(titulo, abstract)
+            spider.logger.info(f"Categoría inferida: {categoria_nombre}")
             
             # Intentar obtener el ID de la categoría
             self.cursor.execute("SELECT id FROM categoria WHERE nombre = %s", (categoria_nombre,))
@@ -121,7 +151,8 @@ class PostgreSQLPipeline:
             if resultado:
                 return resultado[0]
             
-            # Si no existe la categoría, la creamos
+            # Si no existe la categoría (poco probable dado que pre-creamos las principales),
+            # la creamos
             self.cursor.execute(
                 "INSERT INTO categoria (nombre) VALUES (%s) RETURNING id",
                 (categoria_nombre,)
@@ -165,23 +196,24 @@ class PostgreSQLPipeline:
 
     def process_item(self, item, spider):
         try:
-            # Añadir logging detallado
-            spider.logger.info(f"Procesando item: {item.get('titulo', '')[:50]}...")
+            titulo = item.get('titulo', '')
+            abstract = item.get('abstract', '')
+            
+            spider.logger.info(f"Procesando item: {titulo[:50]}...")
             
             # Generar el embedding del texto
-            text_to_embed = f"{item.get('titulo', '')} {item.get('abstract', '')}"
+            text_to_embed = f"{titulo} {abstract}"
             vector_768 = self._generate_embedding(text_to_embed, spider)
             spider.logger.info("Embedding generado correctamente")
             
-            # Obtener el ID de la categoría
-            categoria_id = self._get_categoria_id(item.get('termino_busqueda', ''), spider)
+            # Obtener el ID de la categoría mediante inferencia
+            categoria_id = self._get_categoria_id(titulo, abstract, spider)
             spider.logger.info(f"Categoría ID obtenida: {categoria_id}")
             
             # Formatear la fecha
             fecha_pub = None
             if item.get('fecha_publicacion'):
                 try:
-                    # Intentar diferentes formatos de fecha
                     for fmt in ['%Y-%m-%d', '%Y-%b-%d', '%Y-%B-%d']:
                         try:
                             fecha_pub = datetime.strptime(item.get('fecha_publicacion'), fmt)
@@ -204,7 +236,7 @@ class PostgreSQLPipeline:
                 RETURNING id
                 """,
                 (
-                    item.get('titulo', ''),
+                    titulo,
                     item.get('autor', ''),
                     fecha_pub,
                     vector_768,
@@ -215,16 +247,31 @@ class PostgreSQLPipeline:
             documento_id = self.cursor.fetchone()[0]
             spider.logger.info(f"Documento insertado con ID: {documento_id}")
             
-            # Insertar el resumen si existe
-            if item.get('abstract'):
-                self.cursor.execute(
-                    "INSERT INTO resumen (id_documento, texto_resumen) VALUES (%s, %s)",
-                    (documento_id, item.get('abstract', ''))
-                )
-                spider.logger.info(f"Resumen insertado para documento ID: {documento_id}")
+            # Generar el resumen e insertar en la tabla resumen
+            if abstract:
+                try:
+                    from inferencia.motor_inferencia import generar_miniresumen
+                    resumen_corto = generar_miniresumen(abstract)
+                    
+                    # Insertar en la tabla resumen con referencia al documento
+                    self.cursor.execute(
+                        "INSERT INTO resumen (id_documento, texto_resumen) VALUES (%s, %s)",
+                        (documento_id, resumen_corto)
+                    )
+                    spider.logger.info(f"Resumen insertado para documento ID: {documento_id}")
+                except Exception as e:
+                    spider.logger.error(f"Error al generar o insertar resumen: {e}")
+                    spider.logger.error(traceback.format_exc())
+            
+            # Obtener categorías adicionales recomendadas para futuras referencias
+            try:
+                categorias_recomendadas = obtener_categorias_recomendadas(titulo, abstract, n=3)
+                spider.logger.info(f"Categorías recomendadas: {categorias_recomendadas}")
+            except Exception as e:
+                spider.logger.error(f"Error al obtener categorías recomendadas: {e}")
             
             self.connection.commit()
-            spider.logger.info(f"Transacción completada exitosamente para '{item.get('titulo')[:50]}...'")
+            spider.logger.info(f"Transacción completada exitosamente para '{titulo[:50]}...'")
 
         except Exception as e:
             if self.connection:
@@ -234,7 +281,6 @@ class PostgreSQLPipeline:
             spider.logger.error(f"Detalles del item: {item}")
 
         return item
-
 
 # Pipeline para pruebas locales
 class PrintPipeline:

@@ -1,4 +1,4 @@
-# 1) Instala un reactor compatible (selectreactor o asyncioreactor)
+# 1) Instala un reactor compatible (selectreactor)
 from twisted.internet import selectreactor
 selectreactor.install()
 

@@ -20,7 +20,7 @@ class PubmedSpider(scrapy.Spider):
         self.query = query
         self.max_results = int(max_results)
         self.base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
-        self.api_key = ''  # Opcional: agrega tu API key de NCBI
+        self.api_key = ''  # key de NCBI
     
     def start_requests(self):
         # Paso 1: Buscar IDs de artículos usando esearch
@@ -45,15 +45,15 @@ class PubmedSpider(scrapy.Spider):
     
     def parse_search(self, response):
         try:
-            # Extraer IDs de los resultados de búsqueda
+            # Extraer los ids de los resultados de la query
             data = json.loads(response.body)
             id_list = data.get('esearchresult', {}).get('idlist', [])
             
             if not id_list:
-                self.logger.warning(f"No articles found for the query: {self.query}")
+                self.logger.warning(f"No se han encontrado artículos para la query: {self.query}")
                 return
             
-            # Paso 2: Obtener detalles de los artículos usando efetch
+            # 2: Obtener detalles de los artículos usando efetch
             ids = ','.join(id_list)
             efetch_url = f"{self.base_url}/efetch.fcgi"
             params = {
@@ -65,7 +65,7 @@ class PubmedSpider(scrapy.Spider):
             # Añadir API key si está disponible
             if self.api_key:
                 params['api_key'] = self.api_key
-            
+
             yield scrapy.FormRequest(
                 url=efetch_url, 
                 formdata=params, 
@@ -73,16 +73,16 @@ class PubmedSpider(scrapy.Spider):
                 errback=self.handle_error
             )
         except Exception as e:
-            self.logger.error(f"Error parsing search results: {e}")
+            self.logger.error(f"Error parseando los resultados de la búsqueda: {e}")
             raise CloseSpider(f"Parse error: {e}")
     
     def parse_articles(self, response):
-        # Extraer información de los artículos del XML
+        """ Método para extraer los datos de los XML de los artículos"""
         articles = response.xpath('//PubmedArticle')
         
         for article in articles:
             try:
-                # Extraer título
+                # Extraer titulo
                 title = article.xpath('.//ArticleTitle/text()').get('')
                 
                 # Extraer autores
@@ -99,7 +99,7 @@ class PubmedSpider(scrapy.Spider):
                 month = article.xpath('.//PubDate/Month/text()').get('01')
                 day = article.xpath('.//PubDate/Day/text()').get('01')
                 
-                # Formatear fecha para la base de datos
+                # formatearla para la base de datos
                 pub_date = None
                 if year:
                     try:
@@ -107,11 +107,11 @@ class PubmedSpider(scrapy.Spider):
                     except:
                         pub_date = None
                 
-                # Extraer URL
+                # Extraemos la URL
                 pmid = article.xpath('.//PMID/text()').get('')
                 url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else ""
                 
-                # Abstracts
+                # y el resumen del artuculo:
                 abstract_parts = article.xpath('.//AbstractText/text()').getall()
                 abstract = ' '.join(abstract_parts)
                 
@@ -126,7 +126,7 @@ class PubmedSpider(scrapy.Spider):
                     'termino_busqueda': self.query
                 }
             except Exception as e:
-                self.logger.error(f"Error parsing individual article: {e}")
+                self.logger.error(f"Error parseando el articulo: {e}")
     
     def handle_error(self, failure):
         """Maneja errores de manera más robusta"""

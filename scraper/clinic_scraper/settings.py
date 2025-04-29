@@ -19,7 +19,6 @@ PG_DATABASE = 'cliniccloud'
 PG_USER = 'admin'
 PG_PASSWORD = 'admin123'
 
-# Activar el pipeline - Comentar PostgreSQLPipeline y usar PrintPipeline para depuración
 ITEM_PIPELINES = {
     #'clinic_scraper.pipelines.PrintPipeline': 300,
     'clinic_scraper.pipelines.PostgreSQLPipeline': 300,
