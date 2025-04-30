@@ -128,17 +128,7 @@ class PostgreSQLPipeline:
             self.connection.rollback()
     
     def _get_categoria_id(self, titulo, abstract, spider):
-        """
-        Obtiene o crea una categoría apropiada basada en el contenido del documento
-        
-        Args:
-            titulo: Título del documento
-            abstract: Abstract o resumen del documento
-            spider: Instancia del spider para logging
-            
-        Returns:
-            ID de la categoría en la base de datos
-        """
+        """ Obtiene o crea una categoría apropiada basada en el contenido del documento """
         try:
             # Usar el motor de inferencia para determinar la categoría
             categoria_nombre = obtener_mejor_categoria(titulo, abstract)
@@ -150,9 +140,7 @@ class PostgreSQLPipeline:
             
             if resultado:
                 return resultado[0]
-            
-            # Si no existe la categoría (poco probable dado que pre-creamos las principales),
-            # la creamos
+            # Si no existe la categoría (poco probable dado que pre-creamos las principales), la creamos
             self.cursor.execute(
                 "INSERT INTO categoria (nombre) VALUES (%s) RETURNING id",
                 (categoria_nombre,)
@@ -163,7 +151,7 @@ class PostgreSQLPipeline:
             return nuevo_id
         except Exception as e:
             spider.logger.error(f"Error al obtener/crear categoría: {e}")
-            return self.categoria_default_id  # Fallback a categoría default
+            return self.categoria_default_id  # Fallback a categoría por defecto
 
     def _generate_embedding(self, text, spider):
         """Genera el embedding para el texto dado"""

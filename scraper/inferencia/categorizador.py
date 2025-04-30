@@ -67,17 +67,8 @@ class MedicalCategorizer:
             self.use_model = False
     
     def categorizar_texto(self, titulo: str, abstract: str) -> List[Tuple[str, float]]:
-        """
-        Categoriza un texto médico basado en su título y resumen
-        
-        Args:
-            titulo: Título del documento
-            abstract: Resumen o abstract del documento
-            
-        Returns:
-            Lista de tuplas (categoria, puntuación) ordenada por relevancia
-        """
-        # Combinar título y abstract, dando más peso al título
+        """ Categoriza un texto médico basado en su título y resumen"""
+        # título y resumen combinados, dando más peso al título
         texto_completo = f"{titulo} {titulo} {abstract}"
         texto_completo = texto_completo.lower()
         
@@ -100,7 +91,7 @@ class MedicalCategorizer:
             # Convertir a probabilidades
             probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
             
-            # Mapear las categorías (este mapeo dependerá del modelo específico)
+            # Mapear las categorías
             categorias = list(CATEGORIAS_MEDICAS.keys())
             resultados = [(categorias[i % len(categorias)], probs[0][i].item()) 
                           for i in range(min(len(categorias), len(probs[0])))]
@@ -110,13 +101,11 @@ class MedicalCategorizer:
             return resultados[:3]  # Devolver las 3 mejores categorías
         except Exception as e:
             logger.error(f"Error en categorización con modelo: {e}")
-            return self._categorizar_con_reglas(texto)  # Fallback
+            return self._categorizar_con_reglas(texto)
     
     def _categorizar_con_reglas(self, texto: str) -> List[Tuple[str, float]]:
         """Categoriza usando reglas basadas en palabras clave"""
         resultados = []
-        
-        # Puntuación para cada categoría
         puntuaciones = {categoria: 0.0 for categoria in CATEGORIAS_MEDICAS}
         
         # Contar ocurrencias de términos clave
@@ -125,9 +114,8 @@ class MedicalCategorizer:
                 # Buscar el término como palabra completa o parte de palabra
                 ocurrencias = len(re.findall(r'\b' + termino + r'[a-z]*\b', texto, re.IGNORECASE))
                 if ocurrencias > 0:
-                    # Incrementar puntuación por ocurrencia
                     puntuaciones[categoria] += ocurrencias * 0.5
-                    # Bonus si está en el título (asumiendo que está repetido en texto_completo)
+                    # si está en el título (puntos extra por impoirtancia)
                     if ocurrencias >= 2:
                         puntuaciones[categoria] += 0.5
         
@@ -143,33 +131,22 @@ class MedicalCategorizer:
         # Convertir a lista de tuplas
         for categoria, puntuacion in puntuaciones.items():
             if puntuacion > 0:
-                # Normalizar puntuación entre 0 y 1
                 puntuacion_norm = min(puntuacion / 10.0, 1.0)
                 resultados.append((categoria, puntuacion_norm))
         
-        # Ordenar por puntuación y devolver las mejores
+        # Ordenar por puntuación y devolver las 3 mejores
         resultados = sorted(resultados, key=lambda x: x[1], reverse=True)
         return resultados[:3] if resultados else [("Medicina General", 1.0)]
 
 
 def obtener_mejor_categoria(titulo: str, abstract: str) -> str:
-    """
-    Obtiene la mejor categoría para un documento médico
-    
-    Args:
-        titulo: Título del documento
-        abstract: Resumen o abstract del documento
-        
-    Returns:
-        Nombre de la categoría más apropiada
-    """
+    """Obtiene la mejor categoría para un documento médico"""
     try:
         categorizer = MedicalCategorizer()
         categorias = categorizer.categorizar_texto(titulo, abstract)
         
         if categorias:
-            # Devolver la categoría con mayor puntuación
-            return categorias[0][0]
+            return categorias[0][0] # la categoría con mayor puntuación
         else:
             return "Medicina General"
     except Exception as e:
@@ -178,23 +155,12 @@ def obtener_mejor_categoria(titulo: str, abstract: str) -> str:
 
 
 def obtener_categorias_recomendadas(titulo: str, abstract: str, n: int = 3) -> List[str]:
-    """
-    Obtiene las n mejores categorías recomendadas para un documento
-    
-    Args:
-        titulo: Título del documento
-        abstract: Resumen o abstract del documento
-        n: Número de categorías a devolver
-        
-    Returns:
-        Lista con los nombres de las categorías recomendadas
-    """
+    """Obtiene las n mejores categorías recomendadas para un documento """
     try:
         categorizer = MedicalCategorizer()
         categorias = categorizer.categorizar_texto(titulo, abstract)
         
-        # Devolver las n mejores categorías
-        return [cat[0] for cat in categorias[:n]]
+        return [cat[0] for cat in categorias[:n]] # las n mejores categorías
     except Exception as e:
         logger.error(f"Error al obtener categorías recomendadas: {e}")
         return ["Medicina General"]

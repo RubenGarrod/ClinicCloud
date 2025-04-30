@@ -38,6 +38,24 @@ services:
       - PYTHONPATH=/app
     networks:
       - cliniccloud-net
+      
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: cliniccloud_api
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://admin:admin123@db:5432/cliniccloud
+    networks:
+      - cliniccloud-net
 
 volumes:
   pgdata:

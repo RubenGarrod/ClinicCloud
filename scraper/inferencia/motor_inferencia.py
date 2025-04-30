@@ -10,7 +10,7 @@ import re
 logger = logging.getLogger('inference_engine')
 logger.setLevel(logging.INFO)
 
-# Singleton para modelos
+
 class ModelManager:
     _instance = None
     _lock = Lock()
@@ -27,7 +27,7 @@ class ModelManager:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Usando dispositivo: {self.device}")
         
-        # Modelo para resúmenes cortos
+        # resúmenes cortos
         try:
             self.summarizer = pipeline(
                 "summarization", 
@@ -39,7 +39,7 @@ class ModelManager:
             logger.error(f"Error al cargar el modelo de resumen: {e}")
             self.summarizer = None
         
-        # Modelo para clasificación médica (opcional)
+        # clasificación médica 
         try:
             self.medical_classifier = pipeline(
                 "text-classification", 
@@ -51,7 +51,7 @@ class ModelManager:
             logger.error(f"Error al cargar el modelo de clasificación médica: {e}")
             self.medical_classifier = None
         
-        # Modelo para extracción de palabras clave
+        # extracción de palabras clave
         try:
             self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
             self.keyword_extractor = None  # Se implementará usando frecuencia de términos
@@ -62,16 +62,7 @@ class ModelManager:
 
 
 def generar_miniresumen(texto: str, max_length: int = 150, min_length: int = 50) -> str:
-    """Genera un miniresumen condensado del texto.
-    
-    Args:
-        texto: Texto a resumir
-        max_length: Longitud máxima del resumen en tokens
-        min_length: Longitud mínima del resumen en tokens
-        
-    Returns:
-        Texto resumido
-    """
+    """Genera un miniresumen condensado del texto."""
     if not texto or not texto.strip():
         return ""
     
@@ -105,21 +96,14 @@ def generar_miniresumen(texto: str, max_length: int = 150, min_length: int = 50)
 
 
 def clasificar_contenido_medico(texto: str) -> Dict[str, float]:
-    """Clasifica el contenido médico para determinar afirmaciones, negaciones, etc.
-    
-    Args:
-        texto: Texto médico a clasificar
-        
-    Returns:
-        Diccionario con las categorías y sus probabilidades
-    """
+    """Clasifica el contenido médico para determinar afirmaciones, negaciones, etc."""
     if not texto or not texto.strip():
         return {"no_text": 1.0}
     
     try:
         model_manager = ModelManager()
         if model_manager.medical_classifier:
-            resultado = model_manager.medical_classifier(texto[:512])  # Limitamos a 512 tokens
+            resultado = model_manager.medical_classifier(texto[:512])  
             return {item['label']: item['score'] for item in resultado}
         else:
             logger.warning("Modelo de clasificación médica no disponible")
@@ -130,24 +114,14 @@ def clasificar_contenido_medico(texto: str) -> Dict[str, float]:
 
 
 def extraer_palabras_clave(texto: str, num_palabras: int = 5) -> List[str]:
-    """Extrae las palabras clave más relevantes del texto.
-    
-    Args:
-        texto: Texto del que extraer palabras clave
-        num_palabras: Número de palabras clave a extraer
-        
-    Returns:
-        Lista de palabras clave
-    """
+    """Extrae las palabras clave más relevantes del texto."""
     if not texto or not texto.strip():
         return []
-    
     try:
         model_manager = ModelManager()
         if not model_manager.tokenizer:
             return []
-        
-        # Lista de stopwords en inglés y español
+        # stopwords en inglés y español
         stopwords = set([
             "the", "and", "a", "in", "to", "of", "is", "it", "that", "for", "on",
             "with", "as", "at", "by", "from", "or", "this", "be", "are", "was",
@@ -155,11 +129,11 @@ def extraer_palabras_clave(texto: str, num_palabras: int = 5) -> List[str]:
             "por", "para"
         ])
         
-        # Tokenizar y limpiar
+        # tokenizacion y limpieza
         tokens = model_manager.tokenizer.tokenize(texto.lower())
         tokens = [t for t in tokens if t not in stopwords and len(t) > 2]
         
-        # Contar frecuencias
+        # cont frecuencias
         freq = {}
         for token in tokens:
             if token in freq:
@@ -167,7 +141,7 @@ def extraer_palabras_clave(texto: str, num_palabras: int = 5) -> List[str]:
             else:
                 freq[token] = 1
         
-        # Ordenar por frecuencia
+        # ordenar por frecuencia
         palabras_clave = sorted(freq.items(), key=lambda x: x[1], reverse=True)[:num_palabras]
         return [palabra for palabra, _ in palabras_clave]
     except Exception as e:
@@ -176,14 +150,7 @@ def extraer_palabras_clave(texto: str, num_palabras: int = 5) -> List[str]:
 
 
 def generar_analisis_completo(texto: str) -> Dict[str, Any]:
-    """Genera un análisis completo del texto médico.
-    
-    Args:
-        texto: Texto médico a analizar
-        
-    Returns:
-        Diccionario con el análisis completo
-    """
+    """Genera un análisis completo del texto médico."""
     resultado = {
         "resumen": generar_miniresumen(texto),
         "clasificacion": clasificar_contenido_medico(texto),
@@ -199,10 +166,8 @@ def _preprocesar_texto(texto: str) -> str:
     if not texto:
         return ""
     
-    # Eliminar múltiples espacios en blanco
+    # borrar espacios en blanco (mas de 1) y caracteres problematicos
     texto = re.sub(r'\s+', ' ', texto)
-    
-    # Eliminar caracteres especiales problemáticos
     texto = re.sub(r'[^\w\s.,;:?!-]', '', texto)
     
     return texto.strip()
@@ -213,11 +178,11 @@ def _postprocesar_texto(texto: str) -> str:
     if not texto:
         return ""
     
-    # Asegurar que termina con un punto
+    # que termine con un punto
     if texto and texto[-1] not in ['.', '!', '?']:
         texto += '.'
     
-    # Capitalizar primera letra
+    # primera letra en mayús
     if texto:
         texto = texto[0].upper() + texto[1:]
     
