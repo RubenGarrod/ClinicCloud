@@ -57,6 +57,29 @@ services:
     networks:
       - cliniccloud-net
 
+
+  motor_busqueda:
+    build:
+      context: ./motor_busqueda
+      dockerfile: Dockerfile
+    container_name: cliniccloud_motor_busqueda
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./motor_busqueda:/app
+    environment:
+      - PYTHONPATH=/app
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=cliniccloud
+      - DB_USER=admin
+      - DB_PASSWORD=admin123
+    networks:
+      - cliniccloud-net
+      
 volumes:
   pgdata:
 
