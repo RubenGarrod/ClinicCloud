@@ -1,0 +1,54 @@
+/* Header.css */
+.app-header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1rem 0;
+  }
+  
+  .header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .header-logo-container {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+  }
+  
+  .header-logo {
+    width: 40px;
+    height: auto;
+    margin-right: 0.8rem;
+  }
+  
+  .header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c7db9;
+  }
+  
+  .header-nav {
+    display: flex;
+    gap: 1.5rem;
+  }
+  
+  .header-nav a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  .header-nav a:hover {
+    color: #2c7db9;
+  }
+  
+  @media (max-width: 768px) {
+    .header-nav {
+      display: none;
+    }
+  }

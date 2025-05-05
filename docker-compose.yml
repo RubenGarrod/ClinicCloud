@@ -85,7 +85,23 @@ services:
       - DB_PASSWORD=admin123
     networks:
       - cliniccloud-net
-      
+    
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cliniccloud_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - cliniccloud-net
+
 volumes:
   pgdata:
 
