@@ -3,6 +3,6 @@ uvicorn==0.23.2
 psycopg2-binary==2.9.7
 pydantic==2.1.1
 sentence-transformers==2.2.2
-huggingface-hub==0.14.1  # Añade esta línea con una versión compatible
-transformers==4.26.0      # También fija la versión de transformers
+huggingface-hub==0.14.1  
+transformers==4.26.0      
 numpy==1.25.2

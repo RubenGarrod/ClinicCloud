@@ -53,6 +53,12 @@ services:
       - ./api:/app
     environment:
       - PYTHONPATH=/app
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=cliniccloud
+      - DB_USER=admin
+      - DB_PASSWORD=admin123
+      - SEARCH_ENGINE_URL=http://motor_busqueda:8001
       - DATABASE_URL=postgresql://admin:admin123@db:5432/cliniccloud
     networks:
       - cliniccloud-net

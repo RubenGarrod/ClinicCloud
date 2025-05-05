@@ -61,25 +61,25 @@ class DatabaseConnector:
             if not self.connection or self.connection.closed:
                 self.connect()
                 
-            # Base de la consulta SQL
             sql = """
             SELECT d.id, d.titulo, d.autor, d.fecha_publicacion, d.url_fuente,
-                   r.texto_resumen, c.id as categoria_id, c.nombre as categoria_nombre,
-                   1 - (d.contenido_vectorizado <=> %s) as score
+                r.texto_resumen, c.id as categoria_id, c.nombre as categoria_nombre,
+                1 - (d.contenido_vectorizado <=> %s::vector) as score
             FROM documento d
             JOIN resumen r ON d.id = r.id_documento
             LEFT JOIN categoria c ON d.id_categoria = c.id
             """
-            
+
             params = [query_vector]
-            
+
             # Condición para filtrar por categoría
-            where_clause = " WHERE 1 - (d.contenido_vectorizado <=> %s) > %s "
+            where_clause = " WHERE 1 - (d.contenido_vectorizado <=> %s::vector) > %s "
             params.append(query_vector)
             params.append(similarity_threshold)
+
             
             if category_id:
-                where_clause += " AND d.id_categoria = %s "
+                where_clause += " AND d.id_categoria = %s"
                 params.append(category_id)
                 
             # Añadir cláusula WHERE
