@@ -1,6 +1,6 @@
 # Clinic Cloud
 
-![Clinic Cloud Logo](https://via.placeholder.com/150x150.png?text=ClinicCloud)
+![Clinic Cloud Logo](frontend/src/assets/clinic-cloud-logo.png)
 
 Clinic Cloud es un sistema de búsqueda de información médica basado en procesamiento de lenguaje natural, diseñado para facilitar el acceso a documentos médicos y científicos. El proyecto está construido con una arquitectura de microservicios, utilizando tecnologías modernas como Python, FastAPI, React, PostgreSQL y Docker.
 
@@ -29,8 +29,8 @@ Sigue estos pasos para configurar y ejecutar Clinic Cloud en tu máquina local:
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/RubenGarrod/clinic-cloud.git
-cd clinic-cloud
+git clone https://github.com/RubenGarrod/cliniccloud.git
+cd cliniccloud
 ```
 
 ### 2. Configurar variables de entorno (opcional)
@@ -195,6 +195,6 @@ Este proyecto está licenciado bajo la GNU General Public License v3.0 (GPL-3.0)
 
 ## Contacto
 
-Rubén García Rodríguez - contacto@cliniccloud.org
+Rubén García Rodríguez - ruben.garrod@educa.jcyl.es
 
-Enlace del proyecto: [https://github.com/RubenGarrod/clinic-cloud](https://github.com/RubenGarrod/clinic-cloud)
+Enlace del proyecto: [https://github.com/RubenGarrod/cliniccloud](https://github.com/RubenGarrod/cliniccloud)
