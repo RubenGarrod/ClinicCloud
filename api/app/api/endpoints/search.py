@@ -56,6 +56,8 @@ async def search_documents(query: SearchQuery):
                                 autor=item["autor"] if "autor" in item else [],
                                 url_fuente=item.get("url_fuente"),
                                 texto_resumen=item.get("texto_resumen"),
+                                fecha_publicacion=item.get("fecha_publicacion"),  # Añadido
+                                categoria=item.get("categoria"),  # Añadido
                                 score=item["score"]
                             )
                         )

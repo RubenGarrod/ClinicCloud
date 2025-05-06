@@ -6,10 +6,72 @@ const ResultsPage = ({ query, results, isLoading, onSearch, onSelectDocument, se
   const [searchInput, setSearchInput] = useState(query);
   const navigate = useNavigate();
 
+  // Definición de estilos con comportamiento adaptativo
+  const styles = {
+    container: {
+      width: '90%',
+      maxWidth: '1300px',
+      margin: '0 auto',
+      padding: '1.5rem',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    },
+    resultsContent: {
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    },
+    // Layout adaptativo basado en si hay un documento seleccionado
+    getResultsLayout: (hasSelectedDoc) => ({
+      display: 'grid',
+      gridTemplateColumns: window.innerWidth >= 992 
+        ? (hasSelectedDoc ? '2fr 1fr' : '1fr') // Si hay selección: 2 columnas, si no: 1 columna
+        : '1fr',
+      gap: '1.5rem',
+      width: '100%',
+    }),
+    // Ancho de lista adaptativo
+    getResultsList: (hasSelectedDoc) => ({
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem',
+      width: '100%',
+      // Centramos la lista cuando ocupa todo el ancho
+      maxWidth: !hasSelectedDoc && window.innerWidth >= 992 ? '900px' : '100%',
+      margin: !hasSelectedDoc && window.innerWidth >= 992 ? '0 auto' : '0'
+    }),
+    resultItem: {
+      padding: '1.25rem',
+      width: '100%',
+      borderRadius: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      transition: 'transform 0.2s, box-shadow 0.2s',
+      cursor: 'pointer',
+      boxSizing: 'border-box'
+    },
+    header: {
+      width: '100%',
+      textAlign: 'center',
+      marginBottom: '1.5rem'
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (searchInput.trim()) {
       onSearch(searchInput);
+    }
+  };
+
+  // Manejador para alternar la selección de documentos
+  const handleSelectDocument = (doc) => {
+    // Si el documento seleccionado es el mismo que ya está seleccionado, deseleccionamos
+    if (selectedDocument && selectedDocument.id === doc.id) {
+      onSelectDocument(null); // Deseleccionar
+    } else {
+      onSelectDocument(doc); // Seleccionar nuevo documento
     }
   };
 
@@ -24,8 +86,8 @@ const ResultsPage = ({ query, results, isLoading, onSearch, onSelectDocument, se
   };
 
   return (
-    <div className="results-page">
-      <div className="results-header">
+    <div className="results-page" style={styles.container}>
+      <div className="results-header" style={styles.header}>
         <h1>Resultados de Búsqueda</h1>
         <h2>"{query}"</h2>
         
@@ -58,7 +120,7 @@ const ResultsPage = ({ query, results, isLoading, onSearch, onSelectDocument, se
         </form>
       </div>
 
-      <div className="results-content">
+      <div className="results-content" style={styles.resultsContent}>
         {isLoading ? (
           <div className="results-loading">
             <span className="loader-large"></span>
@@ -70,13 +132,20 @@ const ResultsPage = ({ query, results, isLoading, onSearch, onSelectDocument, se
             <p>Intenta con otros términos o revisa la ortografía.</p>
           </div>
         ) : (
-          <div className="results-layout">
-            <div className="results-list">
+          <div 
+            className="results-layout" 
+            style={styles.getResultsLayout(!!selectedDocument)}
+          >
+            <div 
+              className="results-list" 
+              style={styles.getResultsList(!!selectedDocument)}
+            >
               {results.map((doc) => (
                 <div 
                   key={doc.id} 
                   className={`result-item ${selectedDocument && selectedDocument.id === doc.id ? 'selected' : ''}`}
-                  onClick={() => onSelectDocument(doc)}
+                  onClick={() => handleSelectDocument(doc)}
+                  style={styles.resultItem}
                 >
                   <div className="result-category">
                     {doc.categoria ? doc.categoria.nombre : 'Sin categoría'}
@@ -108,7 +177,7 @@ const ResultsPage = ({ query, results, isLoading, onSearch, onSelectDocument, se
               ))}
             </div>
             
-            {/* Panel de vista previa para la versión de escritorio */}
+            {/* Panel de vista previa visible solo cuando hay un documento seleccionado */}
             {selectedDocument && (
               <div className="preview-panel">
                 <div className="preview-header">
