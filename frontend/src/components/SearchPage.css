@@ -1,9 +1,8 @@
-/* SearchPage.css */
 .search-page {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: calc(100vh - 160px); /* Account for header and footer */
+    min-height: calc(100vh - 160px); 
     padding: 2rem;
   }
   
@@ -14,11 +13,11 @@
   }
   
   .logo-container {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
   
   .logo {
-    width: 120px;
+    width: 444px;
     height: auto;
     margin-bottom: 1rem;
   }

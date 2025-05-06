@@ -1,3 +1,4 @@
+
 import logging
 import psycopg2
 from typing import List, Dict, Any, Optional, Tuple
@@ -17,7 +18,7 @@ class DatabaseConnector:
         """Establece la conexión a la base de datos"""
         try:
             self.connection = psycopg2.connect(
-                host=self.config.get('host', 'localhost'),  # Cambiado de localhost a mejorar compatibilidad
+                host=self.config.get('host', 'localhost'),
                 port=self.config.get('port', '5432'),
                 dbname=self.config.get('dbname', 'cliniccloud'),
                 user=self.config.get('user', 'admin'),
@@ -42,7 +43,7 @@ class DatabaseConnector:
                         category_id: Optional[int] = None, 
                         limit: int = 20, 
                         offset: int = 0,
-                        similarity_threshold: float = 0.5) -> List[DocumentResult]:  # Reducido umbral a 0.5
+                        similarity_threshold: float = 0.5) -> List[DocumentResult]:
         """
         Realiza una búsqueda vectorial en la base de datos
         
@@ -72,9 +73,11 @@ class DatabaseConnector:
 
             params = [query_vector]
 
-            # Condición para filtrar por nivel de similitud
+            # Condición para filtrar por categoría
             where_clause = " WHERE 1 - (d.contenido_vectorizado <=> %s::vector) > %s "
-            params.extend([query_vector, similarity_threshold])  # CORREGIDO: Ahora se pasan ambos parámetros
+            params.append(query_vector)
+            params.append(similarity_threshold)
+
             
             if category_id:
                 where_clause += " AND d.id_categoria = %s"
@@ -88,16 +91,9 @@ class DatabaseConnector:
             params.append(limit)
             params.append(offset)
             
-            # Log de la consulta SQL para depuración
-            self.logger.debug(f"Ejecutando SQL: {sql}")
-            self.logger.debug(f"Parámetros: {params}")
-            
             # Ejecutar consulta
             self.cursor.execute(sql, params)
             results = self.cursor.fetchall()
-            
-            # Log de resultados
-            self.logger.info(f"Búsqueda completada: {len(results)} resultados encontrados")
             
             # Convertir a objetos DocumentResult
             documents = []
@@ -136,5 +132,3 @@ class DatabaseConnector:
             raise
         finally:
             self.close()
-
-

@@ -20,7 +20,6 @@ const SearchPage = ({ onSearch, isLoading }) => {
       <div className="search-container">
         <div className="logo-container">
           <img src={clinicLogo} alt="Clinic Cloud Logo" className="logo" />
-          <h1 className="app-title">Clinic Cloud</h1>
         </div>
         
         <form onSubmit={handleSubmit} className="search-form">
@@ -52,7 +51,7 @@ const SearchPage = ({ onSearch, isLoading }) => {
         </form>
         
         <p className="search-description">
-          Accede a miles de documentos médicos desde un único punto y con resúmenes generados por IA
+          Accede a miles de documentos médicos desde un único punto 
         </p>
       </div>
     </div>

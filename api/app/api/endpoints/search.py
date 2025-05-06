@@ -10,7 +10,9 @@ router = APIRouter()
 logger = logging.getLogger("search_router")
 
 # URL del microservicio del motor de búsqueda
-SEARCH_ENGINE_URL = os.getenv("SEARCH_ENGINE_URL", "http://motor_busqueda:8001")
+SEARCH_ENGINE_URL = os.getenv("SEARCH_ENGINE_URL", "http://localhost:8001")
+
+logger.info(f"Configurado motor de búsqueda en: {SEARCH_ENGINE_URL}")
 
 @router.post("/", response_model=SearchResponse)
 async def search_documents(query: SearchQuery):
@@ -49,7 +51,7 @@ async def search_documents(query: SearchQuery):
                     try:
                         results.append(
                             SearchResult(
-                                id_documento=item["id_documento"],
+                                id_documento=item["id"],
                                 titulo=item["titulo"],
                                 autor=item["autor"] if "autor" in item else [],
                                 url_fuente=item.get("url_fuente"),

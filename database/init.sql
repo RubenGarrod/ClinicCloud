@@ -24,3 +24,7 @@ CREATE TABLE resumen (
     id_documento INTEGER REFERENCES documento(id) ON DELETE CASCADE,
     texto_resumen TEXT NOT NULL
 );
+
+-- Crear índice para búsquedas vectoriales
+CREATE INDEX ON documento USING ivfflat (contenido_vectorizado vector_cosine_ops) 
+WITH (lists = 100);
