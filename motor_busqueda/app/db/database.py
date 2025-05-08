@@ -9,7 +9,7 @@ logger = logging.getLogger("database")
 
 def get_connection():
     """
-    Create a connection to the PostgreSQL database.
+    Crea una conexión a la base de datos PostgreSQL.
     """
     try:
         connection = psycopg2.connect(
@@ -30,15 +30,15 @@ def execute_query(
     fetchone: bool = False
 ) -> Union[List[Tuple], Tuple, None]:
     """
-    Execute a SQL query and return the results.
+    Ejecuta una consulta SQL y devuelve los resultados.
     
     Args:
-        query: SQL query string
-        params: Parameters for the SQL query
-        fetchone: Whether to fetch one result or all results
+        query: Cadena de consulta SQL
+        params: Parámetros para la consulta SQL
+        fetchone: Si se debe obtener un solo resultado o todos los resultados
         
     Returns:
-        Query results or None if no results
+        Resultados de la consulta o None si no hay resultados
     """
     connection = None
     try:
@@ -50,7 +50,7 @@ def execute_query(
         else:
             cursor.execute(query)
             
-        if cursor.description:  # If the query returns rows
+        if cursor.description: 
             if fetchone:
                 result = cursor.fetchone()
             else:
@@ -74,15 +74,15 @@ def execute_dict_query(
     fetchone: bool = False
 ) -> Union[List[Dict[str, Any]], Dict[str, Any], None]:
     """
-    Execute a SQL query and return the results as dictionaries.
+    Ejecuta una consulta SQL y devuelve los resultados como diccionarios.
     
     Args:
-        query: SQL query string
-        params: Parameters for the SQL query
-        fetchone: Whether to fetch one result or all results
+        query: Cadena de consulta SQL
+        params: Parámetros para la consulta SQL
+        fetchone: Si se debe obtener un solo resultado o todos los resultados
         
     Returns:
-        Query results as dictionaries or None if no results
+        Resultados de la consulta como diccionarios o None si no hay resultados
     """
     connection = None
     try:

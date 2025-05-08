@@ -6,16 +6,15 @@ import os
 import hashlib
 import time
 
-# Configure logging
+# logging oara debugg
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vector_search")
 
 def create_connection():
     """
-    Creates a connection to the PostgreSQL database.
+    Genera la conexión con la base de datos PostgreSQL
     """
     try:
-        # Get database settings from environment variables
         db_host = os.getenv("DB_HOST", "db")
         db_port = os.getenv("DB_PORT", "5432")
         db_name = os.getenv("DB_NAME", "cliniccloud")
@@ -37,29 +36,30 @@ def create_connection():
 
 def get_simple_embedding(query_text: str, embedding_dim=768) -> List[float]:
     """
-    Creates a simple deterministic embedding for text search.
+    Genera un embedding a partir de una cadena de texto
     """
-    # Normalize text
+    # normalizamos la cadena
     text = query_text.lower().strip()
     
-    # Create a deterministic seed from the text
+    # Se genera una semilla a partir del hash de la cadena
+    # Esto asegura que el embedding sea reproducible
+    # y que no dependa de la longitud del texto
     text_hash = hashlib.md5(text.encode()).hexdigest()
     seed = int(text_hash, 16) % (2**32)
-    
-    # Set the random seed for reproducibility
+
     np.random.seed(seed)
     
-    # Generate base embedding
+    # generamos un embedding aleatorio
     embedding = np.random.normal(0, 1, embedding_dim)
     
-    # Influence the embedding based on the text
+    # e influenciamos el embedding con la cadena de texto
     chunks = [text[i:i+3] for i in range(0, len(text), 3)]
     for i, chunk in enumerate(chunks[:100]):
         chunk_val = sum(ord(c) for c in chunk)
         chunk_idx = chunk_val % embedding_dim
         embedding[chunk_idx] += chunk_val / 1000
     
-    # Normalize
+    # volvemos a normalizar
     norm = np.linalg.norm(embedding)
     if norm > 0:
         embedding = embedding / norm
@@ -72,29 +72,18 @@ async def perform_vector_search(
     limit: int = 20,
     offset: int = 0
 ) -> Tuple[List[Dict[Any, Any]], int]:
-    """
-    Performs a vector similarity search in the database.
-    
-    Args:
-        query: The natural language query string
-        id_categoria: Optional category ID to filter results
-        limit: Maximum number of results to return
-        offset: Offset for pagination
-        
-    Returns:
-        Tuple of (list of results, total count)
-    """
+    """  Realiza una búsqueda por similitud vectorial en la base de datos. """
     try:
-        # Get query embedding
         start_time = time.time()
+        # obtenemos el embedding de la query
         query_embedding = get_simple_embedding(query)
         logger.info(f"Embedding generado en {time.time() - start_time:.2f} segundos")
         
-        # Connect to the database
+        # creamos la conexion 
         conn = create_connection()
         cursor = conn.cursor()
         
-        # Check if we have documents in the database
+        # se comprueba que haya documentos en la database
         cursor.execute("SELECT COUNT(*) FROM documento")
         doc_count = cursor.fetchone()[0]
         logger.info(f"Total documents in database: {doc_count}")
@@ -103,13 +92,14 @@ async def perform_vector_search(
             logger.warning("No documents in database!")
             return [], 0
             
-        # Debug: Check a sample document to understand the structure
+        # Debugging: muestra un documento de ejemplo
         cursor.execute("SELECT id, titulo, autor FROM documento LIMIT 1")
         sample = cursor.fetchone()
         if sample:
             logger.info(f"Sample document - ID: {sample[0]}, Title: {sample[1]}, Author: {sample[2]}")
             
-        # First try a simple query without vector similarity to make sure basic DB access works
+        # Primero, se intenta una consulta simple para verificar la conexión y la estructura de la base de datos
+        # Esto es útil para depurar problemas de conexión o estructura de la base de datos
         try:
             logger.info("Trying simple query...")
             cursor.execute("SELECT id, titulo FROM documento LIMIT 5")
@@ -120,35 +110,96 @@ async def perform_vector_search(
         except Exception as e:
             logger.error(f"Simple query failed: {e}")
         
-        # Now try the vector search with careful error handling at each step
         try:
             logger.info("Attempting vector search...")
             
-            # Check if vector extension is enabled
-            try:
-                cursor.execute("SELECT 1 FROM pg_extension WHERE extname = 'vector'")
-                has_vector = cursor.fetchone() is not None
-                logger.info(f"Vector extension is {'enabled' if has_vector else 'NOT enabled'}")
-                if not has_vector:
-                    logger.error("Vector extension not enabled in PostgreSQL!")
-                    # Fall back to non-vector search
-                    raise Exception("Vector extension not available")
-            except Exception as e:
-                logger.error(f"Error checking vector extension: {e}")
-                raise
-                
-            # Check a document with its vector to see the structure
-            try:
-                cursor.execute("SELECT id, contenido_vectorizado FROM documento WHERE contenido_vectorizado IS NOT NULL LIMIT 1")
-                vec_sample = cursor.fetchone()
-                if vec_sample:
-                    logger.info(f"Sample vector - ID: {vec_sample[0]}, Vector dim: {len(vec_sample[1])}")
-                else:
-                    logger.warning("No documents with non-NULL vectors found!")
-            except Exception as e:
-                logger.error(f"Error checking vector sample: {e}")
+            # Verificamos si la extensión de vector está habilitada
+            cursor.execute("SELECT 1 FROM pg_extension WHERE extname = 'vector'")
+            has_vector = cursor.fetchone() is not None
+            logger.info(f"Vector extension is {'enabled' if has_vector else 'NOT enabled'}")
             
-            # Try with simple text search instead of vector search
+            # Verificamos que tengamos documentos con vectores
+            cursor.execute("SELECT COUNT(*) FROM documento WHERE contenido_vectorizado IS NOT NULL")
+            vectorized_count = cursor.fetchone()[0]
+            logger.info(f"Documents with vectors: {vectorized_count}")
+            
+            if has_vector and vectorized_count > 0:
+                # Si tenemos la extensión y documentos vectorizados, procedemos con la búsqueda
+                logger.info("Executing vector search with embedding...")
+                
+                # SQL para búsqueda vectorial usando el operador de distancia coseno (<->)
+                # Ordenamos por similitud (1 - distancia) para que los más similares aparezcan primero
+                vector_sql = """
+                SELECT 
+                    d.id, 
+                    d.titulo, 
+                    d.autor, 
+                    d.fecha_publicacion, 
+                    d.url_fuente,
+                    c.id as id_categoria,
+                    c.nombre as categoria_nombre,
+                    r.texto_resumen,
+                    1 - (d.contenido_vectorizado <-> %s::vector) as score
+                FROM 
+                    documento d
+                LEFT JOIN 
+                    categoria c ON d.id_categoria = c.id
+                LEFT JOIN 
+                    resumen r ON d.id = r.id_documento
+                WHERE 
+                    d.contenido_vectorizado IS NOT NULL
+                """
+                
+                # Parámetros para la consulta
+                params = [query_embedding]
+                
+                # Añadir filtro de categoría si es necesario
+                if id_categoria is not None:
+                    vector_sql += " AND d.id_categoria = %s"
+                    params.append(id_categoria)
+                
+                # Ordenar por score y aplicar límite y offset
+                vector_sql += " ORDER BY score DESC LIMIT %s OFFSET %s"
+                params.extend([limit, offset])
+                
+                try:
+                    # Ejecutamos la consulta vectorial
+                    logger.info(f"Executing vector query with {len(query_embedding)}-dimensional embedding")
+                    cursor.execute(vector_sql, params)
+                    rows = cursor.fetchall()
+                    logger.info(f"Vector search returned {len(rows)} results")
+                    
+                    # Si tenemos resultados, calculamos el total aproximado
+                    if rows:
+                        # Consulta para estimar el total sin límite
+                        if id_categoria is not None:
+                            cursor.execute(
+                                "SELECT COUNT(*) FROM documento WHERE contenido_vectorizado IS NOT NULL AND id_categoria = %s", 
+                                [id_categoria]
+                            )
+                        else:
+                            cursor.execute("SELECT COUNT(*) FROM documento WHERE contenido_vectorizado IS NOT NULL")
+                        total_count = cursor.fetchone()[0]
+                        logger.info(f"Estimated total matches: {total_count}")
+                    else:
+                        total_count = 0
+                    
+                    # Si la búsqueda vectorial no devuelve resultados, intentamos búsqueda de texto
+                    if not rows:
+                        logger.info("Vector search returned no results, falling back to text search...")
+                        raise Exception("No vector search results")
+                        
+                except Exception as e:
+                    logger.error(f"Vector search failed: {str(e)}")
+                    raise  # Re-lanzamos la excepción para caer en la búsqueda de texto
+            else:
+                logger.warning("Vector search not possible: extension or vectorized documents missing")
+                raise Exception("Vector search not possible")
+                
+        except Exception as e:
+            logger.error(f"Vector search failed, falling back to text search: {str(e)}")
+            
+            # Búsqueda de texto como fallback
             search_terms = query.lower().split()
             search_sql = """
             SELECT 
@@ -175,12 +226,12 @@ async def perform_vector_search(
             search_pattern = f"%{search_terms[0]}%"
             params = [search_pattern, search_pattern]
             
-            # Add category filter if specified
+            # si se especifica una categoria se aplica como filtro
             if id_categoria is not None:
                 search_sql += " AND d.id_categoria = %s"
                 params.append(id_categoria)
             
-            # Execute search query with limit and offset
+            # se ejecuta la consulta
             search_sql += " ORDER BY d.fecha_publicacion DESC LIMIT %s OFFSET %s"
             
             logger.info(f"Executing text search with pattern: {search_pattern}")
@@ -188,48 +239,49 @@ async def perform_vector_search(
             rows = cursor.fetchall()
             logger.info(f"Text search query returned {len(rows)} results")
             
-            # Get total count (simplified)
-            total_count = min(doc_count, 100)  # Just an estimate
+            # Si la búsqueda de texto también falla, usamos el último recurso
+            if not rows:
+                logger.info("Text search returned no results, using last resort fallback...")
+                
+                # Last resort fallback - simplemente devuelve los documentos más recientes
+                fallback_sql = """
+                SELECT 
+                    d.id, 
+                    d.titulo, 
+                    d.autor, 
+                    d.fecha_publicacion, 
+                    d.url_fuente,
+                    c.id as id_categoria,
+                    c.nombre as categoria_nombre,
+                    r.texto_resumen,
+                    0.75 as score
+                FROM 
+                    documento d
+                LEFT JOIN 
+                    categoria c ON d.id_categoria = c.id
+                LEFT JOIN 
+                    resumen r ON d.id = r.id_documento
+                """
+                
+                if id_categoria is not None:
+                    fallback_sql += " WHERE d.id_categoria = %s"
+                    cursor.execute(fallback_sql + " ORDER BY d.fecha_publicacion DESC LIMIT %s OFFSET %s", 
+                                 [id_categoria, limit, offset])
+                else:
+                    cursor.execute(fallback_sql + " ORDER BY d.fecha_publicacion DESC LIMIT %s OFFSET %s",
+                                 [limit, offset])
+                
+                rows = cursor.fetchall()
+                logger.info(f"Fallback query returned {len(rows)} results")
             
-        except Exception as e:
-            logger.error(f"Vector/text search failed: {e}")
-            
-            # Last resort fallback - just get the most recent documents
-            fallback_sql = """
-            SELECT 
-                d.id, 
-                d.titulo, 
-                d.autor, 
-                d.fecha_publicacion, 
-                d.url_fuente,
-                c.id as id_categoria,
-                c.nombre as categoria_nombre,
-                r.texto_resumen,
-                0.75 as score
-            FROM 
-                documento d
-            LEFT JOIN 
-                categoria c ON d.id_categoria = c.id
-            LEFT JOIN 
-                resumen r ON d.id = r.id_documento
-            ORDER BY d.fecha_publicacion DESC
-            LIMIT %s OFFSET %s
-            """
-            
-            logger.info("Using fallback query - most recent documents")
-            cursor.execute(fallback_sql, [limit, offset])
-            rows = cursor.fetchall()
-            logger.info(f"Fallback query returned {len(rows)} results")
-            
-            # Get total count
-            total_count = doc_count
+            total_count = doc_count  # Estimación aproximada
         
-        # Process results
+        # Procesamos los resultados
         results = []
         for row in rows:
-            # Convert autor to a list if it's a string
+            # se convierte el autor a lista ya que suelen ser varios
             authors = []
-            if row[2]:  # autor column
+            if row[2]:  
                 if isinstance(row[2], str):
                     if ',' in row[2]:
                         authors = [author.strip() for author in row[2].split(',')]
@@ -238,7 +290,7 @@ async def perform_vector_search(
                 else:
                     authors = [row[2]]
             
-            # Build result object
+            # y se genera el diccionario de respuesta (JSON)
             result = {
                 "id": row[0],
                 "titulo": row[1],
@@ -250,11 +302,11 @@ async def perform_vector_search(
                     "nombre": row[6]
                 } if row[5] else None,
                 "texto_resumen": row[7],
-                "score": float(row[8]) if row[8] is not None else 0.0  # Convert Decimal to float
+                "score": float(row[8]) if row[8] is not None else 0.0 
             }
             results.append(result)
         
-        # Close database connection
+        # cerramos conexion
         cursor.close()
         conn.close()
         
@@ -264,5 +316,5 @@ async def perform_vector_search(
     except Exception as e:
         logger.error(f"Error en búsqueda vectorial: {str(e)}")
         
-        # Return empty results as a last resort fallback
+        # Se devuelve vacío como último fallback
         return [], 0

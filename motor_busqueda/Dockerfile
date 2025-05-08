@@ -2,15 +2,11 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     python3-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Create directory structure
-RUN mkdir -p /app/app/search /app/app/models /app/app/db /app/models
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt /app/

@@ -9,16 +9,14 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Configurar CORS para permitir peticiones desde el frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, restringe a dominios específicos
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Incluir routers de los endpoints
 app.include_router(search.router, prefix="/api/search", tags=["search"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 app.include_router(categories.router, prefix="/api/categories", tags=["categories"])
