@@ -6,8 +6,6 @@ import psycopg2
 import sys
 import signal
 import random
-
-# Instalar SelectReactor antes de importar otros módulos de Twisted
 from twisted.internet import selectreactor
 selectreactor.install()
 
@@ -17,7 +15,6 @@ from scrapy.utils.project import get_project_settings
 from clinic_scraper.spiders.pubmed_spider import PubmedSpider
 from scrapy.utils.ossignal import install_shutdown_handlers
 
-# Configurar logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',

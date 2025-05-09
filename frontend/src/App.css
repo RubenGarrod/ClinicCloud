@@ -68,13 +68,12 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
-  
-  /* SearchPage.css */
+
   .search-page {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: calc(60vh - 120px); /* Account for header and footer */
+    min-height: calc(60vh - 120px); 
     padding: 2rem;
   }
   
@@ -149,7 +148,7 @@
     font-size: 1rem;
   }
   
-  /* ResultsPage.css */
+
   .results-page {
     min-height: calc(80vh - 120px);
     padding: 2rem;
@@ -398,7 +397,7 @@
     text-decoration: none;
   }
   
-  /* Header.css */
+ 
   .app-header {
     background-color: var(--background-white);
     box-shadow: 0 2px 4px var(--shadow-color);
@@ -447,7 +446,7 @@
     color: var(--primary-color);
   }
   
-  /* Footer.css */
+
   .app-footer {
     background-color: var(--background-white);
     box-shadow: 0 -2px 4px var(--shadow-color);
@@ -519,7 +518,6 @@
     color: var(--text-light);
   }
   
-  /* Responsive adjustments */
   @media (max-width: 768px) {
     .header-nav {
       display: none;

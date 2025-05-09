@@ -1,4 +1,3 @@
--- Habilita la extensión pgvector (si no está ya activa)
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Tabla de categorías
@@ -13,7 +12,7 @@ CREATE TABLE documento (
     titulo VARCHAR(500) NOT NULL,
     autor VARCHAR(255),
     fecha_publicacion DATE,
-    contenido_vectorizado VECTOR(768), -- 768 dimensiones como el embedding de BART
+    contenido_vectorizado VECTOR(768), 
     url_fuente TEXT NOT NULL,
     id_categoria INTEGER REFERENCES categoria(id)
 );
@@ -25,6 +24,6 @@ CREATE TABLE resumen (
     texto_resumen TEXT NOT NULL
 );
 
--- Crear índice para búsquedas vectoriales
+-- índice para búsquedas vectoriales
 CREATE INDEX ON documento USING ivfflat (contenido_vectorizado vector_cosine_ops) 
 WITH (lists = 100);

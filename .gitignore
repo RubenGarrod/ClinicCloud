@@ -1,14 +1,10 @@
-# Entorno virtual
 myenv/
 venv/
 
-# Archivos de Python compilados
 __pycache__/
 *.py[cod]
 
-# Archivos temporales
 *.log
 *.tmp
 
-# Config de editor
 .vscode/

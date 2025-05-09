@@ -2,8 +2,8 @@
 .results-page {
   min-height: calc(80vh - 120px);
   padding: 2rem;
-  max-width: 1400px;  /* Añadido: establecer ancho máximo */
-  margin: 0 auto;     /* Añadido: centrar contenido */
+  max-width: 1400px;  
+  margin: 0 auto;    
 }
 
 .results-header {
@@ -25,7 +25,7 @@
 
 .results-search-form {
   width: 100%;
-  max-width: 700px;   /* Incrementado: de 600px a 700px */
+  max-width: 700px;   
   margin: 0 auto;
 }
 
@@ -56,9 +56,9 @@
 
 .results-content {
   margin-top: 2rem;
-  width: 100%;        /* Añadido: para asegurar ancho completo */
-  max-width: 1200px;  /* Añadido: ancho máximo contenido */
-  margin: 2rem auto 0; /* Añadido: centrado horizontal */
+  width: 100%;        
+  max-width: 1200px;  
+  margin: 2rem auto 0; 
 }
 
 .results-loading {
@@ -88,7 +88,7 @@
 
 @media (min-width: 992px) {
   .results-layout {
-    grid-template-columns: 3fr 2fr;  /* Modificado: antes era 1fr 1fr */
+    grid-template-columns: 3fr 2fr;  
   }
 }
 
@@ -96,7 +96,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  width: 100%;        /* Añadido: utilizar ancho completo disponible */
+  width: 100%;        
 }
 
 .result-item {
@@ -106,7 +106,7 @@
   box-shadow: 0 2px 6px var(--shadow-color);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  width: 100%;        /* Añadido: asegurar ancho completo */
+  width: 100%;     
 }
 
 .result-item:hover {
