@@ -17,10 +17,10 @@ Clinic Cloud es un sistema de búsqueda de información médica basado en proces
 
 Para ejecutar Clinic Cloud localmente, necesitarás:
 
-- [Docker](https://www.docker.com/products/docker-desktop/) y Docker Compose
+- [Docker](https://www.docker.com/products/docker-desktop/) 
 - [Git](https://git-scm.com/downloads)
 - Al menos 4GB de RAM disponible para los contenedores
-- Aproximadamente 2GB de espacio en disco
+- Aproximadamente 20GB de espacio en disco
 
 ## Instalación
 
