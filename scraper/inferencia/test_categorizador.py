@@ -1,5 +1,3 @@
-# Guardar como test_categorizador.py en el directorio del proyecto
-
 import logging
 import sys
 from categorizador import obtener_mejor_categoria, obtener_categorias_recomendadas, MedicalCategorizer
@@ -82,7 +80,6 @@ casos_prueba = [
     }
 ]
 
-# Ejecutar todas las pruebas
 for caso in casos_prueba:
     probar_categorizacion(caso["titulo"], caso["abstract"], caso["nombre"])
 
