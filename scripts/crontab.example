@@ -1,0 +1,111 @@
+# =============================================================================
+# CLINICCLOUD - CONFIGURACIÓN DE CRONTAB PARA SCRAPER CONTINUO
+# =============================================================================
+# Este archivo contiene ejemplos de configuración de cron para programar
+# el scraper continuo en diferentes escenarios.
+#
+# INSTALACIÓN:
+#   1. Copiar las líneas deseadas
+#   2. Ejecutar: crontab -e
+#   3. Pegar las líneas
+#   4. Guardar y salir
+#
+# VERIFICAR:
+#   crontab -l
+#
+# VER LOGS:
+#   tail -f /var/log/cliniccloud-scraper.log
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# EJEMPLO 1: Horario nocturno (22:00 - 08:00)
+# -----------------------------------------------------------------------------
+# Inicia a las 22h, detiene a las 8h
+# Ideal para no consumir recursos durante el día
+# -----------------------------------------------------------------------------
+0 22 * * * /root/ClinicCloud/scripts/scraper-start.sh >> /var/log/cliniccloud-scraper.log 2>&1
+0 8 * * * /root/ClinicCloud/scripts/scraper-stop.sh >> /var/log/cliniccloud-scraper.log 2>&1
+
+# -----------------------------------------------------------------------------
+# EJEMPLO 2: Solo fines de semana
+# -----------------------------------------------------------------------------
+# Inicia viernes 22h, detiene lunes 8h
+# Recopila durante todo el fin de semana
+# -----------------------------------------------------------------------------
+0 22 * * 5 /root/ClinicCloud/scripts/scraper-start.sh >> /var/log/cliniccloud-scraper.log 2>&1
+0 8 * * 1 /root/ClinicCloud/scripts/scraper-stop.sh >> /var/log/cliniccloud-scraper.log 2>&1
+
+# -----------------------------------------------------------------------------
+# EJEMPLO 3: Ejecuciones cortas cada 4 horas
+# -----------------------------------------------------------------------------
+# Ejecuta 30 minutos cada 4 horas
+# Menos carga continua, más distribuido
+# -----------------------------------------------------------------------------
+0 */4 * * * /root/ClinicCloud/scripts/scraper-start.sh >> /var/log/cliniccloud-scraper.log 2>&1
+30 */4 * * * /root/ClinicCloud/scripts/scraper-stop.sh >> /var/log/cliniccloud-scraper.log 2>&1
+
+# -----------------------------------------------------------------------------
+# EJEMPLO 4: Horario de oficina invertido
+# -----------------------------------------------------------------------------
+# Detiene durante horario de oficina (9h-18h)
+# Ejecuta por la noche y madrugada
+# -----------------------------------------------------------------------------
+0 18 * * * /root/ClinicCloud/scripts/scraper-start.sh >> /var/log/cliniccloud-scraper.log 2>&1
+0 9 * * * /root/ClinicCloud/scripts/scraper-stop.sh >> /var/log/cliniccloud-scraper.log 2>&1
+
+# -----------------------------------------------------------------------------
+# EJEMPLO 5: Una vez por día (horario nocturno de 2 horas)
+# -----------------------------------------------------------------------------
+# Ejecuta de 2am a 4am todos los días
+# Mínima interferencia, recopilación diaria
+# -----------------------------------------------------------------------------
+0 2 * * * /root/ClinicCloud/scripts/scraper-start.sh >> /var/log/cliniccloud-scraper.log 2>&1
+0 4 * * * /root/ClinicCloud/scripts/scraper-stop.sh >> /var/log/cliniccloud-scraper.log 2>&1
+
+# -----------------------------------------------------------------------------
+# MONITOREO OPCIONAL: Enviar estadísticas diarias por email
+# -----------------------------------------------------------------------------
+# Requiere configurar mailutils o similar
+# -----------------------------------------------------------------------------
+# 0 9 * * * /root/ClinicCloud/scripts/scraper-status.sh | mail -s "ClinicCloud Scraper Report" admin@example.com
+
+# -----------------------------------------------------------------------------
+# BACKUP AUTOMÁTICO: Antes de cada ejecución del scraper
+# -----------------------------------------------------------------------------
+# 55 21 * * * /root/ClinicCloud/scripts/backup-db.sh >> /var/log/cliniccloud-backup.log 2>&1
+
+# -----------------------------------------------------------------------------
+# LIMPIEZA DE LOGS: Una vez por semana
+# -----------------------------------------------------------------------------
+# Limpia logs antiguos para liberar espacio
+# -----------------------------------------------------------------------------
+0 3 * * 0 find /var/log/cliniccloud-*.log -mtime +7 -delete
+
+# =============================================================================
+# NOTAS IMPORTANTES:
+# =============================================================================
+# 1. Formato de cron: MIN HORA DIA MES DIA_SEMANA COMANDO
+#    - MIN: 0-59
+#    - HORA: 0-23
+#    - DIA: 1-31
+#    - MES: 1-12
+#    - DIA_SEMANA: 0-6 (0=Domingo, 6=Sábado)
+#
+# 2. Rutas absolutas: Usar siempre rutas completas en cron
+#
+# 3. Variables de entorno: Cron no carga .bashrc
+#    Si necesitas variables, añadir al inicio del crontab:
+#    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#
+# 4. Permisos: Los scripts deben tener permisos de ejecución
+#    chmod +x /root/ClinicCloud/scripts/*.sh
+#
+# 5. Logs: Redirigir output para debugging
+#    >> /var/log/archivo.log 2>&1
+#
+# 6. Testing: Ejecutar scripts manualmente primero
+#    /root/ClinicCloud/scripts/scraper-start.sh
+#
+# 7. Zona horaria: Verificar con 'date' que coincide con cron
+#    timedatectl set-timezone Europe/Madrid
+# =============================================================================

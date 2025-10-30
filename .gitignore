@@ -1,0 +1,238 @@
+# ====================================================
+# ClinicCloud - Production .gitignore
+# ====================================================
+
+# Environment & Secrets
+# ====================================================
+.env
+.env.local
+.env.*.local
+.env.production
+*.key
+*.pem
+*.p12
+secrets/
+credentials/
+
+# Python
+# ====================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pytype/
+cython_debug/
+
+# Virtual Environments
+# ====================================================
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+*.venv
+
+# Node.js / Frontend
+# ====================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+build/
+.next/
+out/
+.cache/
+.parcel-cache
+.nuxt
+dist
+.cache
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# React / Create React App
+# ====================================================
+/frontend/build
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+
+# Database
+# ====================================================
+*.db
+*.sqlite
+*.sqlite3
+*.rdb
+dump.rdb
+*.log
+postgres-data/
+pgdata/
+redis-data/
+
+# Docker
+# ====================================================
+docker-compose.override.yml
+.dockerignore.local
+
+# OS Files
+# ====================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# IDE & Editors
+# ====================================================
+.vscode/
+!.vscode/settings.json.example
+!.vscode/extensions.json.example
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.tmproj
+*.code-workspace
+
+# Logs
+# ====================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ML Models & Large Files
+# ====================================================
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.onnx
+*.pb
+models/downloaded/
+checkpoints/
+*.safetensors
+*.bin
+
+# Backups
+# ====================================================
+backups/*
+!backups/.gitkeep
+*.backup
+*.bak
+*.old
+*.orig
+
+# Testing
+# ====================================================
+.coverage
+coverage/
+*.cover
+.hypothesis/
+.pytest_cache/
+test-results/
+test-reports/
+
+# Temporary Files
+# ====================================================
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Documentation Build
+# ====================================================
+docs/_build/
+docs/.doctrees/
+site/
+
+# Jupyter Notebooks
+# ====================================================
+.ipynb_checkpoints
+*.ipynb
+
+# Development Scripts
+# ====================================================
+dev-*.sh
+dev-*.bat
+test-local-*.sh
+
+# CI/CD
+# ====================================================
+.github/workflows/*.local.yml
+
+# Monitoring & Metrics
+# ====================================================
+prometheus-data/
+grafana-data/
+
+# Keep These Files
+# ====================================================
+!.gitkeep
+!.env.example
+!.vscode/settings.json.example

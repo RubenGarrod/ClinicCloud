@@ -1,0 +1,242 @@
+# ===============================================
+# ClinicCloud - Docker Compose (Production)
+# ===============================================
+
+services:
+  # ===============================================
+  # PostgreSQL Database + pgvector
+  # ===============================================
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: cliniccloud-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cliniccloud}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-cliniccloud}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cliniccloud}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cliniccloud-network
+
+  # ===============================================
+  # Redis (Cache & Rate Limiting)
+  # ===============================================
+  redis:
+    image: redis:7-alpine
+    container_name: cliniccloud-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cliniccloud-network
+
+  # ===============================================
+  # API REST (FastAPI)
+  # ===============================================
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: cliniccloud-api
+    restart: unless-stopped
+    environment:
+      # General
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # JWT Security
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE_HOURS: ${JWT_EXPIRE_HOURS:-24}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+
+      # Database (nomenclatura POSTGRES_* para docker, DB_* para código)
+      POSTGRES_USER: ${POSTGRES_USER:-cliniccloud}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-cliniccloud}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-cliniccloud}}
+      DB_USER: ${DB_USER:-${POSTGRES_USER:-cliniccloud}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD}}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-cliniccloud}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cliniccloud}}
+
+      # Database Pool
+      DB_POOL_MIN_SIZE: ${DB_POOL_MIN_SIZE:-5}
+      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-20}
+      DB_POOL_MAX_QUERIES: ${DB_POOL_MAX_QUERIES:-50000}
+      DB_POOL_MAX_INACTIVE_CONN_LIFETIME: ${DB_POOL_MAX_INACTIVE_CONN_LIFETIME:-300.0}
+
+      # Redis
+      REDIS_URL: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:80}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
+
+      # API
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+
+      # Search Engine URL
+      SEARCH_ENGINE_URL: ${SEARCH_ENGINE_URL:-http://search-engine:8001}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - cliniccloud-network
+
+  # ===============================================
+  # Motor de Búsqueda (Sentence Transformers)
+  # ===============================================
+  search-engine:
+    build:
+      context: ./motor_busqueda
+      dockerfile: Dockerfile
+    container_name: cliniccloud-search-engine
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # Database (nomenclatura POSTGRES_* para docker, DB_* para código)
+      POSTGRES_USER: ${POSTGRES_USER:-cliniccloud}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-cliniccloud}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-cliniccloud}}
+      DB_USER: ${DB_USER:-${POSTGRES_USER:-cliniccloud}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD}}
+
+      # Model Configuration
+      MODEL_NAME: ${MODEL_NAME:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-384}
+      MAX_QUERY_LENGTH: ${MAX_QUERY_LENGTH:-512}
+
+      # API
+      SEARCH_ENGINE_HOST: 0.0.0.0
+      SEARCH_ENGINE_PORT: 8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - cliniccloud-network
+
+  # ===============================================
+  # Frontend (React + Nginx)
+  # ===============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
+        REACT_APP_SEARCH_ENGINE_URL: ${REACT_APP_SEARCH_ENGINE_URL:-http://localhost:8001}
+        REACT_APP_ENVIRONMENT: ${REACT_APP_ENVIRONMENT:-production}
+    container_name: cliniccloud-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+      - search-engine
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - cliniccloud-network
+
+  # ===============================================
+  # Scraper (Background Service - Continuous Mode)
+  # ===============================================
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: cliniccloud-scraper
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # Database (nomenclatura POSTGRES_* para docker, DB_* para código)
+      POSTGRES_USER: ${POSTGRES_USER:-cliniccloud}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-cliniccloud}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-cliniccloud}}
+      DB_USER: ${DB_USER:-${POSTGRES_USER:-cliniccloud}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD}}
+
+      # Scraper Continuous Mode Configuration
+      SCRAPER_MAX_DOCS: ${SCRAPER_MAX_DOCS:-1000}
+      SCRAPER_BATCH_SIZE: ${SCRAPER_BATCH_SIZE:-25}
+      SCRAPER_START_HOUR: ${SCRAPER_START_HOUR:-0}
+      SCRAPER_STOP_HOUR: ${SCRAPER_STOP_HOUR:-23}
+      SCRAPER_LOOP_DELAY: ${SCRAPER_LOOP_DELAY:-1800}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./scraper/models:/app/models:rw
+    networks:
+      - cliniccloud-network
+
+# ===============================================
+# Volumes
+# ===============================================
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+# ===============================================
+# Networks
+# ===============================================
+networks:
+  cliniccloud-network:
+    driver: bridge
