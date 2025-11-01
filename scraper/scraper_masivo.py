@@ -356,8 +356,8 @@ class DatabaseManager:
         try:
             self.conn = psycopg2.connect(
                 dbname=os.getenv('DB_NAME', 'cliniccloud'),
-                user=os.getenv('DB_USER', 'admin'),
-                password=os.getenv('DB_PASSWORD', 'admin123'),
+                user=os.getenv('DB_USER', 'cliniccloud'),
+                password=os.getenv('DB_PASSWORD', 'changeme'),
                 host=os.getenv('DB_HOST', 'localhost'),
                 port=os.getenv('DB_PORT', '5432')
             )

@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     DB_HOST: str = os.getenv("DB_HOST", "db")
     DB_PORT: str = os.getenv("DB_PORT", "5432")
     DB_NAME: str = os.getenv("DB_NAME", "cliniccloud")
-    DB_USER: str = os.getenv("DB_USER", "admin")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "admin123")
+    DB_USER: str = os.getenv("DB_USER", "cliniccloud")
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "changeme")
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
         f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"

@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 # Obtener la URL de la base de datos desde variables de entorno o usar la por defecto
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:admin123@localhost:5432/cliniccloud")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://cliniccloud:changeme@localhost:5432/cliniccloud")
 
 def apply_migration(migration_file):
     """Aplica un archivo SQL de migración a la base de datos"""

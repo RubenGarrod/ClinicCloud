@@ -62,8 +62,11 @@ async def startup():
             import redis.asyncio as redis
             from fastapi_limiter import FastAPILimiter
 
+            # Obtener contraseña de Redis si está configurada
+            redis_password = os.getenv("REDIS_PASSWORD")
             redis_connection = await redis.from_url(
                 REDIS_URL,
+                password=redis_password,
                 encoding="utf-8",
                 decode_responses=True
             )

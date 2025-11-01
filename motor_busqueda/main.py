@@ -107,6 +107,18 @@ app.add_middleware(
 def read_root():
     return {"message": "ClinicCloud Search Engine API", "status": "running"}
 
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint for Docker and monitoring systems.
+    Returns the service status and basic information.
+    """
+    return {
+        "status": "healthy",
+        "service": "ClinicCloud Search Engine",
+        "version": "0.1.0"
+    }
+
 @app.post("/search", response_model=SearchResponse)
 async def search_documents(query: SearchQuery):
     """

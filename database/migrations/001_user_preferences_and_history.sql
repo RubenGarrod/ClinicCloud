@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS search_history (
     id SERIAL PRIMARY KEY,
 
     -- Relación con usuario (NULL para búsquedas anónimas)
-    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id INTEGER REFERENCES auth.users(id) ON DELETE SET NULL,
 
     -- Query de búsqueda
     query TEXT NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS favorite_documents (
     id SERIAL PRIMARY KEY,
 
     -- Usuario propietario del favorito
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
     -- Información del documento
     document_id VARCHAR(255) NOT NULL,  -- ID del documento en tu sistema
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     id SERIAL PRIMARY KEY,
 
     -- Usuario propietario
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
     -- Título de la conversación (auto-generado o editado por usuario)
     title VARCHAR(500) NOT NULL,
@@ -217,7 +217,7 @@ CREATE TABLE IF NOT EXISTS document_interactions (
     id SERIAL PRIMARY KEY,
 
     -- Usuario (puede ser NULL si no queremos guardar user_id)
-    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id INTEGER REFERENCES auth.users(id) ON DELETE SET NULL,
 
     -- Documento
     document_id VARCHAR(255) NOT NULL,

@@ -121,11 +121,12 @@ fi
 print_success "Usuario root verificado"
 
 # Verificar conexión a internet
-if ping -c 1 google.com &> /dev/null; then
+print_info "Verificando conexión a internet..."
+if ping -c 4 -W 5 8.8.8.8 &> /dev/null || ping -c 4 -W 5 1.1.1.1 &> /dev/null; then
     print_success "Conexión a internet OK"
 else
-    print_error "No hay conexión a internet"
-    exit 1
+    print_warning "No se pudo verificar conexión a internet (continuando de todos modos)"
+    print_info "Si tienes problemas, verifica tu conexión de red"
 fi
 
 # =============================================================================

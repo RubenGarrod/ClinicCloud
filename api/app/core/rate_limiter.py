@@ -45,23 +45,44 @@ RATE_LIMITS = {
 }
 
 
-def get_rate_limiter(limit_type: str) -> RateLimiter:
+async def rate_limit_with_cors_support(request: Request, limit_type: str):
+    """
+    Rate limiter wrapper que no aplica límites a OPTIONS requests (CORS preflight).
+
+    Los preflight requests CORS deben pasar sin rate limiting para que
+    el navegador pueda verificar permisos antes del request real.
+    """
+    # Skip rate limiting para OPTIONS requests (CORS preflight)
+    if request.method == "OPTIONS":
+        return None
+
+    # Aplicar rate limiting normalmente para otros métodos
+    limiter = RATE_LIMITS.get(limit_type)
+    if not limiter:
+        logger.warning(f"Rate limiter no encontrado para {limit_type}, usando default")
+        limiter = RateLimiter(times=100, hours=1)
+
+    logger.debug(f"Rate limiter para {limit_type}: {limiter}")
+    # Ejecutar el rate limiter
+    await limiter(request)
+    return None
+
+
+def get_rate_limiter(limit_type: str):
     """
     Obtiene el rate limiter configurado para un tipo de endpoint.
+    Automáticamente excluye OPTIONS requests (CORS preflight).
 
     Args:
         limit_type: Tipo de endpoint (ej: "auth_login", "search_authenticated")
 
     Returns:
-        RateLimiter configurado
+        Dependency que aplica rate limiting (pero no a OPTIONS)
     """
-    limiter = RATE_LIMITS.get(limit_type)
-    if not limiter:
-        logger.warning(f"Rate limiter no encontrado para {limit_type}, usando default")
-        return RateLimiter(times=100, hours=1)
+    async def rate_limit_dependency(request: Request):
+        return await rate_limit_with_cors_support(request, limit_type)
 
-    logger.debug(f"Rate limiter para {limit_type}: {limiter}")
-    return limiter
+    return rate_limit_dependency
 
 
 async def get_client_identifier(request: Request) -> str:
