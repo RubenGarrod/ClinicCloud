@@ -5,14 +5,22 @@ Este modulo proporciona funciones para ejecutar consultas SQL y manejar transacc
 """
 import psycopg2
 from contextlib import contextmanager
-from app.config import DATABASE_URL
+import os
 
 @contextmanager
 def get_db_connection():
     """Proporciona un contexto para la conexión a la base de datos."""
     conn = None
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        # Usar parámetros individuales en lugar de DATABASE_URL para evitar
+        # problemas con caracteres especiales en la contraseña
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST", "db"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            database=os.getenv("DB_NAME", "cliniccloud"),
+            user=os.getenv("DB_USER", "cliniccloud"),
+            password=os.getenv("DB_PASSWORD", "changeme")
+        )
         yield conn
     finally:
         if conn is not None:
