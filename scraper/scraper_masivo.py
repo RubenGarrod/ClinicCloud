@@ -170,28 +170,44 @@ class PubMedFetcher:
             time.sleep(self.delay - elapsed)
         self.last_request_time = time.time()
 
-    def search_ids(self, query: str, max_results: int = 10000) -> List[str]:
+    def search_ids(self, query: str, max_results: int = 10000,
+                   days_back: int = 30, offset: int = 0) -> List[str]:
         """
-        Busca IDs de artículos para un término.
+        Busca IDs de artículos para un término con filtro de fecha.
 
         Args:
             query: Término de búsqueda
             max_results: Máximo número de resultados
+            days_back: Días hacia atrás para filtrar (default: 30)
+            offset: Offset para paginación (retstart)
 
         Returns:
             Lista de PMIDs
         """
         import requests
+        from datetime import datetime, timedelta
 
         self._rate_limit()
+
+        # Calcular rango de fechas
+        fecha_fin = datetime.now()
+        fecha_inicio = fecha_fin - timedelta(days=days_back)
+
+        # Formato PubMed: YYYY/MM/DD
+        date_filter = f"({fecha_inicio.strftime('%Y/%m/%d')}:{fecha_fin.strftime('%Y/%m/%d')}[dp])"
+
+        # Agregar filtro de fecha al query
+        full_query = f"{query} AND {date_filter}"
 
         url = f"{self.base_url}/esearch.fcgi"
         params = {
             'db': 'pubmed',
-            'term': query,
+            'term': full_query,
             'retmode': 'json',
             'retmax': str(max_results),
-            'sort': 'relevance'
+            'retstart': str(offset),  # Paginación
+            'sort': 'pub_date',  # Ordenar por fecha de publicación (más recientes primero)
+            'datetype': 'pdat'  # Publication date
         }
 
         if self.api_key:
@@ -202,7 +218,9 @@ class PubMedFetcher:
             response.raise_for_status()
             data = response.json()
             ids = data.get('esearchresult', {}).get('idlist', [])
-            logger.info(f"Búsqueda '{query}': {len(ids)} artículos encontrados")
+            total_count = int(data.get('esearchresult', {}).get('count', 0))
+
+            logger.info(f"Búsqueda '{query}' (últimos {days_back} días, offset {offset}): {len(ids)} de {total_count} encontrados")
             return ids
         except Exception as e:
             logger.error(f"Error en búsqueda '{query}': {e}")
@@ -363,9 +381,125 @@ class DatabaseManager:
             )
             self.cursor = self.conn.cursor()
             logger.info("✅ Conectado a la base de datos")
+            self._ensure_tracking_table()
         except Exception as e:
             logger.error(f"❌ Error conectando a BD: {e}")
             raise
+
+    def _ensure_tracking_table(self):
+        """Asegura que la tabla de tracking existe"""
+        try:
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS pmid_procesado (
+                    id SERIAL PRIMARY KEY,
+                    pmid VARCHAR(20) NOT NULL UNIQUE,
+                    fecha_procesado TIMESTAMP NOT NULL DEFAULT NOW(),
+                    query_origen VARCHAR(500),
+                    insertado BOOLEAN DEFAULT FALSE
+                )
+            """)
+            self.cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_pmid_procesado_pmid
+                ON pmid_procesado(pmid)
+            """)
+            self.cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_pmid_procesado_fecha
+                ON pmid_procesado(fecha_procesado)
+            """)
+            self.conn.commit()
+        except Exception as e:
+            logger.warning(f"Tabla pmid_procesado ya existe o error: {e}")
+            self.conn.rollback()
+
+    def filter_unprocessed_pmids(self, pmids: List[str]) -> List[str]:
+        """
+        Filtra PMIDs que ya fueron procesados.
+
+        Args:
+            pmids: Lista de PMIDs a verificar
+
+        Returns:
+            Lista de PMIDs no procesados
+        """
+        if not pmids:
+            return []
+
+        try:
+            # Buscar PMIDs ya procesados
+            placeholders = ','.join(['%s'] * len(pmids))
+            query = f"SELECT pmid FROM pmid_procesado WHERE pmid IN ({placeholders})"
+            self.cursor.execute(query, pmids)
+
+            procesados = {row[0] for row in self.cursor.fetchall()}
+            no_procesados = [pmid for pmid in pmids if pmid not in procesados]
+
+            logger.info(f"🔍 PMIDs: {len(pmids)} total, {len(procesados)} ya procesados, {len(no_procesados)} nuevos")
+            return no_procesados
+
+        except Exception as e:
+            logger.error(f"Error filtrando PMIDs: {e}")
+            return pmids  # En caso de error, retornar todos
+
+    def mark_pmids_as_processed(self, pmids: List[str], query_origen: str = None):
+        """
+        Marca PMIDs como procesados en el tracking.
+
+        Args:
+            pmids: Lista de PMIDs procesados
+            query_origen: Query que originó estos PMIDs
+        """
+        if not pmids:
+            return
+
+        try:
+            for pmid in pmids:
+                self.cursor.execute(
+                    """
+                    INSERT INTO pmid_procesado (pmid, query_origen, insertado)
+                    VALUES (%s, %s, FALSE)
+                    ON CONFLICT (pmid) DO NOTHING
+                    """,
+                    (pmid, query_origen)
+                )
+            self.conn.commit()
+            logger.debug(f"✓ {len(pmids)} PMIDs marcados como procesados")
+
+        except Exception as e:
+            logger.error(f"Error marcando PMIDs como procesados: {e}")
+            self.conn.rollback()
+
+    def mark_pmid_as_inserted(self, pmid: str):
+        """Marca un PMID como insertado exitosamente"""
+        try:
+            self.cursor.execute(
+                "UPDATE pmid_procesado SET insertado = TRUE WHERE pmid = %s",
+                (pmid,)
+            )
+        except Exception as e:
+            logger.error(f"Error marcando PMID {pmid} como insertado: {e}")
+
+    def cleanup_old_tracking(self, days: int = 90):
+        """
+        Limpia registros de tracking antiguos.
+
+        Args:
+            days: Días de antigüedad para eliminar
+        """
+        try:
+            self.cursor.execute(
+                """
+                DELETE FROM pmid_procesado
+                WHERE fecha_procesado < NOW() - INTERVAL '%s days'
+                """,
+                (days,)
+            )
+            deleted = self.cursor.rowcount
+            self.conn.commit()
+            if deleted > 0:
+                logger.info(f"🧹 Limpieza: {deleted} registros de tracking eliminados (>{days} días)")
+        except Exception as e:
+            logger.error(f"Error en limpieza de tracking: {e}")
+            self.conn.rollback()
 
     def get_categoria_id(self, categoria_nombre: str) -> int:
         """Obtiene o crea una categoría"""
@@ -464,6 +598,10 @@ class DatabaseManager:
                             "INSERT INTO resumen (id_documento, texto_resumen) VALUES (%s, %s)",
                             (doc_id, summary)
                         )
+
+                    # Marcar PMID como insertado
+                    if doc.get('pmid'):
+                        self.mark_pmid_as_inserted(doc['pmid'])
 
                     inserted_count += 1
 
@@ -569,27 +707,43 @@ class MassiveScraper:
         self.model_manager.get_summarization_model()
         logger.info("✅ Modelos cargados en memoria")
 
+        # Limpieza periódica de tracking (cada ejecución)
+        self.db.cleanup_old_tracking(days=90)
+
         # Términos de búsqueda médicos
         search_queries = self._generate_search_queries()
         logger.info(f"📋 {len(search_queries)} términos de búsqueda generados")
 
-        # Fetch PMIDs
+        # Fetch PMIDs con filtro de fecha (últimos 30 días)
         all_pmids = []
+        days_back = int(os.getenv('SCRAPER_DAYS_BACK', '30'))  # Configurable vía env
+
         for query in search_queries:
             if not self._should_continue():
                 break
 
-            pmids = self.fetcher.search_ids(query, max_results=500)
+            # Buscar con filtro de fecha
+            pmids = self.fetcher.search_ids(query, max_results=500, days_back=days_back)
             all_pmids.extend(pmids)
             self.stats['fetched'] += len(pmids)
 
             if len(all_pmids) >= self.max_docs:
                 break
 
-        # Eliminar duplicados
+        # Eliminar duplicados en la lista
         all_pmids = list(set(all_pmids))
+        logger.info(f"📊 PMIDs únicos obtenidos: {len(all_pmids)}")
+
+        # Filtrar PMIDs ya procesados
+        all_pmids = self.db.filter_unprocessed_pmids(all_pmids)
+
+        if not all_pmids:
+            logger.warning("⚠️  No hay PMIDs nuevos para procesar")
+            return
+
+        # Limitar al máximo de documentos
         all_pmids = all_pmids[:self.max_docs]
-        logger.info(f"📊 Total PMIDs únicos: {len(all_pmids)}")
+        logger.info(f"📊 PMIDs a procesar: {len(all_pmids)}")
 
         # Procesar en batches
         for i in range(0, len(all_pmids), self.batch_size):
@@ -633,6 +787,9 @@ class MassiveScraper:
     def _process_batch(self, pmids: List[str]):
         """Procesa un batch de PMIDs"""
         try:
+            # Marcar PMIDs como procesados antes de comenzar
+            self.db.mark_pmids_as_processed(pmids, query_origen="batch_processing")
+
             # 1. Fetch articles
             logger.info("📥 Obteniendo artículos de PubMed...")
             articles = self.fetcher.fetch_articles(pmids)
