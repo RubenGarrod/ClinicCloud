@@ -105,13 +105,25 @@ async def shutdown():
 # Definir SOLO los dominios autorizados
 
 # Obtener orígenes permitidos desde variable de entorno o usar defaults seguros
-ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if os.getenv("CORS_ALLOWED_ORIGINS") else [
-    "http://localhost",
-    "http://localhost:3000",
-    "http://localhost:80",
-    "http://127.0.0.1",
-    "http://127.0.0.1:3000",
-]
+# Primero intentar CORS_ALLOWED_ORIGINS, luego CORS_ORIGINS
+cors_env = os.getenv("CORS_ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS")
+if cors_env:
+    # Si viene en formato JSON array: ["http://...", "http://..."]
+    import json
+    try:
+        ALLOWED_ORIGINS = json.loads(cors_env)
+    except json.JSONDecodeError:
+        # Si viene separado por comas: http://...,http://...
+        ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(",") if origin.strip()]
+else:
+    # Defaults seguros para desarrollo
+    ALLOWED_ORIGINS = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:80",
+        "http://127.0.0.1",
+        "http://127.0.0.1:3000",
+    ]
 
 # Limpiar espacios en blanco
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
