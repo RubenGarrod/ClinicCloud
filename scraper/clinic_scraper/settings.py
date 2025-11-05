@@ -14,11 +14,11 @@ NEWSPIDER_MODULE = "clinic_scraper.spiders"
 
 # Config para la BD del sistema
 import os
-PG_HOST = os.getenv('DB_HOST', 'db')  # nombre del servicio en docker-compose
-PG_PORT = os.getenv('DB_PORT', '5432') # puerto de PostgreSQL
-PG_DATABASE = os.getenv('DB_NAME', 'cliniccloud') # nombre de la base de datos
-PG_USER = os.getenv('DB_USER', 'admin') # nombre de usuario
-PG_PASSWORD = os.getenv('DB_PASSWORD', 'admin123') # contraseña
+DB_HOST = os.getenv('DB_HOST', 'db')  # nombre del servicio en docker-compose
+DB_PORT = os.getenv('DB_PORT', '5432') # puerto de PostgreSQL
+DB_NAME = os.getenv('DB_NAME', 'cliniccloud') # nombre de la base de datos
+DB_USER = os.getenv('DB_USER', 'cliniccloud') # nombre de usuario
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'changeme') # contraseña
 
 ITEM_PIPELINES = {
     #'clinic_scraper.pipelines.PrintPipeline': 300,

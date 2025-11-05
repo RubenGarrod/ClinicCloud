@@ -43,11 +43,11 @@ class PostgreSQLPipeline:
     @classmethod
     def from_crawler(cls, crawler):
         return cls(
-            pg_host=crawler.settings.get('PG_HOST', 'db'),
-            pg_port=crawler.settings.get('PG_PORT', '5432'),
-            pg_db=crawler.settings.get('PG_DATABASE', 'cliniccloud'),
-            pg_user=crawler.settings.get('PG_USER', 'admin'),
-            pg_password=crawler.settings.get('PG_PASSWORD', 'admin123')
+            pg_host=crawler.settings.get('DB_HOST', 'db'),
+            pg_port=crawler.settings.get('DB_PORT', '5432'),
+            pg_db=crawler.settings.get('DB_NAME', 'cliniccloud'),
+            pg_user=crawler.settings.get('DB_USER', 'cliniccloud'),
+            pg_password=crawler.settings.get('DB_PASSWORD', 'changeme')
         )
     
     def open_spider(self, spider):
