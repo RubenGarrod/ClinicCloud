@@ -11,22 +11,6 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
-
-/* Prevent horizontal overflow on all elements */
-* {
-  box-sizing: border-box;
-}
-
-html {
-  overflow-x: hidden;
-  width: 100%;
-}
-
-#root {
-  overflow-x: hidden;
-  width: 100%;
 }
 
 /* Apply custom scrollbar to body and html */
@@ -161,76 +145,5 @@ html.font-size-large {
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgb(107 114 128);
-  }
-}
-
-/* ============================================
-   MOBILE RESPONSIVE FIXES
-   ============================================ */
-
-/* Ensure all containers respect viewport width */
-@layer base {
-  /* Prevent any element from causing horizontal scroll */
-  img,
-  video,
-  canvas,
-  iframe,
-  svg {
-    max-width: 100%;
-    height: auto;
-  }
-
-  /* Make sure text doesn't overflow */
-  p, h1, h2, h3, h4, h5, h6, span, div {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-}
-
-/* Mobile-specific adjustments */
-@media (max-width: 768px) {
-  /* Reduce base font size on mobile for better fit */
-  html {
-    font-size: 14px;
-  }
-
-  /* Reduce padding on mobile */
-  body {
-    padding: 0;
-  }
-
-  /* Make containers full width on mobile */
-  .max-w-7xl,
-  .max-w-6xl,
-  .max-w-5xl,
-  .max-w-4xl,
-  .max-w-3xl,
-  .max-w-2xl {
-    max-width: 100% !important;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  /* Adjust result cards for mobile */
-  .result-item {
-    padding: 1rem !important;
-  }
-
-  /* Make text smaller and more compact on mobile */
-  .result-item h3 {
-    font-size: 1.125rem !important;
-    line-height: 1.4 !important;
-  }
-
-  .result-item p {
-    font-size: 0.875rem !important;
-    line-height: 1.5 !important;
-  }
-
-  /* Adjust sticky positioning for mobile */
-  .sticky {
-    position: -webkit-sticky !important;
-    position: sticky !important;
-    top: 1rem !important;
   }
 }
