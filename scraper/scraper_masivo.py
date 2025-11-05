@@ -358,7 +358,7 @@ class DatabaseManager:
                 dbname=os.getenv('DB_NAME', 'cliniccloud'),
                 user=os.getenv('DB_USER', 'cliniccloud'),
                 password=os.getenv('DB_PASSWORD', 'changeme'),
-                host=os.getenv('DB_HOST', 'localhost'),
+                host=os.getenv('DB_HOST', 'db'),
                 port=os.getenv('DB_PORT', '5432')
             )
             self.cursor = self.conn.cursor()

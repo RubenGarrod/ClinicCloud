@@ -103,7 +103,7 @@ class SessionManager:
 
     @staticmethod
     async def create_session(
-        user_id: str,
+        user_id: int,
         token: str,
         request: Request,
         expires_at: datetime,
@@ -113,7 +113,7 @@ class SessionManager:
         Crea una nueva sesión en la base de datos.
 
         Args:
-            user_id: ID del usuario
+            user_id: ID del usuario (integer)
             token: Token JWT completo
             request: FastAPI Request object
             expires_at: Fecha de expiración del token
@@ -263,7 +263,7 @@ class SessionManager:
             return False
 
     @staticmethod
-    async def revoke_all_user_sessions(user_id: str, reason: str = 'security') -> int:
+    async def revoke_all_user_sessions(user_id: int, reason: str = 'security') -> int:
         """
         Revoca todas las sesiones de un usuario.
 
@@ -273,7 +273,7 @@ class SessionManager:
         - El usuario solicita cerrar todas las sesiones
 
         Args:
-            user_id: ID del usuario
+            user_id: ID del usuario (integer)
             reason: Razón de revocación
 
         Returns:
@@ -305,12 +305,12 @@ class SessionManager:
             return 0
 
     @staticmethod
-    async def get_active_sessions(user_id: str) -> list:
+    async def get_active_sessions(user_id: int) -> list:
         """
         Obtiene todas las sesiones activas de un usuario.
 
         Args:
-            user_id: ID del usuario
+            user_id: ID del usuario (integer)
 
         Returns:
             Lista de sesiones activas
@@ -387,14 +387,14 @@ class SessionManager:
             return 0
 
     @staticmethod
-    async def _enforce_session_limit(user_id: str, max_sessions: int = 5) -> int:
+    async def _enforce_session_limit(user_id: int, max_sessions: int = 5) -> int:
         """
         Limita el número de sesiones simultáneas por usuario.
 
         Revoca las sesiones más antiguas si se excede el límite.
 
         Args:
-            user_id: ID del usuario
+            user_id: ID del usuario (integer)
             max_sessions: Número máximo de sesiones permitidas
 
         Returns:

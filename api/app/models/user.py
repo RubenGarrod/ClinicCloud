@@ -124,7 +124,7 @@ class UserResponse(BaseModel):
     NO incluye información sensible como password_hash.
     Este es el formato que ve el frontend.
     """
-    id: str = Field(..., description="ID único del usuario")
+    id: int = Field(..., description="ID único del usuario")
     name: str = Field(..., description="Nombre completo")
     email: str = Field(..., description="Email del usuario")
     title: Optional[str] = Field(None, description="Título profesional")
@@ -180,7 +180,7 @@ class UserInDB(BaseModel):
     Modelo completo del usuario como está en la base de datos.
     Incluye campos sensibles que NO deben exponerse en la API.
     """
-    id: str
+    id: int
     name: str
     email: str
     password_hash: str  # Campo sensible - solo para uso interno
@@ -208,7 +208,7 @@ class TokenData(BaseModel):
     Datos que se almacenan dentro del token JWT.
     Mantener mínimo para reducir tamaño del token.
     """
-    user_id: str = Field(..., description="ID del usuario")
+    user_id: int = Field(..., description="ID del usuario")
     email: str = Field(..., description="Email del usuario")
     exp: datetime = Field(..., description="Fecha de expiración")
     
@@ -253,7 +253,7 @@ class SessionInfo(BaseModel):
     Información de una sesión activa.
     Para mostrar al usuario sus sesiones activas.
     """
-    id: str = Field(..., description="ID de la sesión")
+    id: int = Field(..., description="ID de la sesión")
     created_at: datetime = Field(..., description="Cuándo se creó la sesión")
     expires_at: datetime = Field(..., description="Cuándo expira")
     user_agent: Optional[str] = Field(None, description="Navegador/dispositivo")
