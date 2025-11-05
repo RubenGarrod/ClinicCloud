@@ -158,11 +158,13 @@ def create_user_in_db(user_data: UserRegisterRequest) -> UserInDB:
 # ENDPOINTS DE AUTENTICACIÓN
 # =====================================================
 
-@router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register",
+             response_model=LoginResponse,
+             status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(get_rate_limiter("auth_register"))])
 async def register_user(
     request: Request,
-    user_data: UserRegisterRequest,
-    _rate_limit: Annotated[None, Depends(get_rate_limiter("auth_register"))] = None
+    user_data: UserRegisterRequest
 ):
     """
     Registra un nuevo usuario en el sistema.
@@ -271,11 +273,12 @@ async def register_user(
         )
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login",
+             response_model=LoginResponse,
+             dependencies=[Depends(get_rate_limiter("auth_login"))])
 async def login_user(
     request: Request,
-    credentials: UserLoginRequest,
-    _rate_limit: Annotated[None, Depends(get_rate_limiter("auth_login"))] = None
+    credentials: UserLoginRequest
 ):
     """
     Inicia sesión de un usuario existente.

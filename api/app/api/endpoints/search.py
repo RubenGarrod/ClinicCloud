@@ -21,11 +21,12 @@ SEARCH_ENGINE_URL = os.getenv("SEARCH_ENGINE_URL", "http://localhost:8001")
 
 logger.info(f"Configurado motor de búsqueda en: {SEARCH_ENGINE_URL}")
 
-@router.post("/", response_model=SearchResponse)
+@router.post("/",
+             response_model=SearchResponse,
+             dependencies=[Depends(get_rate_limiter("search_authenticated"))])
 async def search_documents(
     request: Request,
-    query: SearchQuery,
-    _rate_limit: Annotated[None, Depends(get_rate_limiter("search_authenticated"))] = None
+    query: SearchQuery
 ):
     """
     Endpoint para buscar documentos usando procesamiento de lenguaje natural.

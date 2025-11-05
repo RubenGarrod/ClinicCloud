@@ -142,7 +142,7 @@ services:
 
       # Model Configuration
       MODEL_NAME: ${MODEL_NAME:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
-      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-384}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-768}
       MAX_QUERY_LENGTH: ${MAX_QUERY_LENGTH:-512}
 
       # API

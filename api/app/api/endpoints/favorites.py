@@ -22,12 +22,14 @@ from app.core.rate_limiter import get_rate_limiter
 router = APIRouter()
 
 
-@router.post("/", response_model=FavoriteDocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/",
+             response_model=FavoriteDocumentResponse,
+             status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(get_rate_limiter("favorites"))])
 async def add_favorite(
     request: Request,
     favorite: FavoriteDocumentCreate,
-    current_user: UserResponse = Depends(get_current_user),
-    _rate_limit: Annotated[None, Depends(get_rate_limiter("favorites"))] = None
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """
     Marca un documento como favorito para el usuario actual.
@@ -99,15 +101,16 @@ async def add_favorite(
         )
 
 
-@router.get("/", response_model=List[FavoriteDocumentResponse])
+@router.get("/",
+            response_model=List[FavoriteDocumentResponse],
+            dependencies=[Depends(get_rate_limiter("favorites"))])
 async def get_favorites(
     request: Request,
     category: Optional[str] = None,
     tag: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
-    current_user: UserResponse = Depends(get_current_user),
-    _rate_limit: Annotated[None, Depends(get_rate_limiter("favorites"))] = None
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """
     Obtiene la lista de documentos favoritos del usuario actual.
