@@ -167,6 +167,8 @@ if command -v ufw &> /dev/null; then
     ufw allow 443/tcp  # HTTPS
     ufw allow 8000/tcp # API
     ufw allow 8001/tcp # Search Engine
+    ufw allow 9000/tcp # Portainer HTTP
+    ufw allow 9443/tcp # Portainer HTTPS
     echo "y" | ufw enable || true
     print_success "Firewall configurado"
 else

@@ -225,6 +225,22 @@ services:
     networks:
       - cliniccloud-network
 
+  # ===============================================
+  # Portainer (Container Management UI)
+  # ===============================================
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: cliniccloud-portainer
+    restart: unless-stopped
+    ports:
+      - "9443:9443"  # HTTPS UI
+      - "9000:9000"  # HTTP UI
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Acceso a Docker socket (solo lectura)
+      - portainer-data:/data  # Datos persistentes de Portainer
+    networks:
+      - cliniccloud-network
+
 # ===============================================
 # Volumes
 # ===============================================
@@ -232,6 +248,8 @@ volumes:
   postgres-data:
     driver: local
   redis-data:
+    driver: local
+  portainer-data:
     driver: local
 
 # ===============================================
