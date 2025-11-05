@@ -28,6 +28,7 @@ Uso:
 
 import hashlib
 import logging
+import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 from fastapi import Request
@@ -158,7 +159,7 @@ class SessionManager:
                 expires_at,
                 client_ip,
                 user_agent[:500] if user_agent else None,  # Limitar longitud
-                device_info
+                json.dumps(device_info) if device_info else None  # Convertir dict a JSON
             )
 
             if result:
