@@ -346,7 +346,7 @@ async def login_user(
 
         # Actualizar last_login del usuario
         update_login_query = "UPDATE auth.users SET last_login = NOW() WHERE id = %s"
-        execute_query(update_login_query, (int(user.id),), commit=True)
+        execute_query(update_login_query, (int(user.id),), fetchall=False, commit=True)
 
         # Convertir a response público
         user_response = UserResponse(

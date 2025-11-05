@@ -227,8 +227,10 @@ html.font-size-large {
     line-height: 1.5 !important;
   }
 
-  /* Ensure sticky elements don't cause issues */
-  [class*="sticky"] {
-    position: relative !important;
+  /* Adjust sticky positioning for mobile */
+  .sticky {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 1rem !important;
   }
 }
