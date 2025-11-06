@@ -60,26 +60,12 @@ def get_model():
             logger.info("Esto puede tardar unos minutos la primera vez (descarga del modelo)")
 
             # Cargar el modelo especializado en semantic search médico
-            model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
-
-            # Eliminar el módulo Normalize para prevenir normalización automática
-            # Esto permite mejor discriminación semántica en los scores de similaridad
-            modules_without_normalize = [
-                module for module in model
-                if type(module).__name__ != 'Normalize'
-            ]
-
-            # Reconstruir el modelo sin normalización
-            model._modules.clear()
-            for idx, module in enumerate(modules_without_normalize):
-                model._modules[str(idx)] = module
-
-            _model = model
+            _model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
 
             logger.info("✓ Modelo S-PubMedBert-MS-MARCO cargado correctamente")
             logger.info("  - Dimensión: 768 (nativa, sin padding)")
             logger.info("  - Especialización: Semantic search en textos médicos")
-            logger.info("  - Normalización: Deshabilitada (módulo Normalize eliminado)")
+            logger.info("  - Módulos: Transformer + Pooling (sin Normalize)")
 
         except Exception as e:
             logger.error(f"✗ Error al cargar modelo BiomedNLP-PubMedBERT: {e}")
@@ -187,8 +173,7 @@ def get_transformer_embedding(query_text: str) -> List[float]:
             # El modelo automáticamente:
             # - Convierte a minúsculas (uncased)
             # - Tokeniza con vocabulario médico
-            # - Genera vector de 768 dimensiones
-            # El módulo Normalize fue eliminado en get_model(), así que no hay normalización
+            # - Genera vector de 768 dimensiones (~15.0 de norma L2)
             embedding = model.encode(query_text)
 
             # Verificar dimensión (debe ser 768 para BiomedNLP-PubMedBERT)
@@ -200,7 +185,7 @@ def get_transformer_embedding(query_text: str) -> List[float]:
                 # Intentar ajustar la dimensión como medida de emergencia
                 return _adjust_embedding_to_768(embedding)
 
-            logger.debug(f"✓ Embedding generado: 768 dimensiones (modelo médico, sin normalización)")
+            logger.debug(f"✓ Embedding generado: 768 dimensiones (modelo médico)")
             return embedding.tolist()
 
         else:
@@ -285,7 +270,7 @@ async def perform_vector_search(
     id_categoria: Optional[int] = None,
     limit: int = 25,
     offset: int = 0,
-    similarity_threshold: float = 0.65
+    similarity_threshold: float = 0.0
 ) -> Tuple[List[Dict[Any, Any]], int, bool, bool]:
     """
     Realiza una búsqueda semántica de documentos médicos usando embeddings.
@@ -471,14 +456,11 @@ async def perform_vector_search(
             embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
             logger.info(f"Prepared vector string format with length: {len(embedding_str)}")
 
-            # SQL para búsqueda vectorial usando el operador de distancia coseno (<=>)
-            # Recuperamos más resultados de los necesarios y filtramos en Python para mayor precisión
-            # La paginación se hará en el frontend para simplificar
-
-            # Límite de recuperación inicial (traemos más para filtrar después)
-            initial_fetch = 1000
-
+            # SQL para búsqueda vectorial usando inner product
             # Convertimos explícitamente el parámetro al tipo vector
+            # Usamos inner product (<#>) en lugar de cosine distance (<=>)
+            # Inner product da mejor discriminación con vectores de norma variable (~15)
+            # Multiplicamos por -1 porque <#> retorna valores negativos
             vector_sql = """
             SELECT
                 d.id,
@@ -489,7 +471,7 @@ async def perform_vector_search(
                 c.id as id_categoria,
                 c.nombre as categoria_nombre,
                 r.texto_resumen,
-                (1 - (d.contenido_vectorizado <=> %s::vector)) as score
+                (d.contenido_vectorizado <#> %s::vector) * -1 as score
             FROM
                 documento d
             LEFT JOIN
@@ -508,40 +490,33 @@ async def perform_vector_search(
                 params.append(id_categoria)
 
             # Ordenar por similitud (mayor score primero)
+            # Aplicamos el límite directamente en la SQL para obtener solo los top N resultados
             vector_sql += " ORDER BY score DESC LIMIT %s"
-            params.append(initial_fetch)
+            params.append(limit + offset)  # Traer limit + offset para la paginación
 
-            logger.info(f"Ejecutando búsqueda vectorial (recuperando top {initial_fetch} por similitud)")
+            logger.info(f"Ejecutando búsqueda vectorial por ranking (top {limit + offset} más relevantes)")
             cursor.execute(vector_sql, params)
             all_rows = cursor.fetchall()
             logger.info(f"Búsqueda vectorial retornó {len(all_rows)} resultados totales")
 
-            # FILTRAR en Python por threshold de similitud
-            # Manejar casos donde row[8] (score) puede ser None si el documento no tiene vector
-            filtered_rows = [row for row in all_rows if row[8] is not None and row[8] >= similarity_threshold]
-            logger.info(f"Después de filtrar por similitud >= {similarity_threshold}: {len(filtered_rows)} resultados")
+            # Aplicar paginación (offset) después de obtener los resultados ordenados
+            rows = all_rows[offset:offset + limit] if offset < len(all_rows) else []
+            total_count = len(all_rows)
+            has_more = (offset + limit) < total_count
 
             # Log de scores para debugging
-            if filtered_rows:
-                scores = [row[8] for row in filtered_rows]
-                logger.info(f"Score máximo: {max(scores):.4f}, Score mínimo: {min(scores):.4f}, Score promedio: {sum(scores)/len(scores):.4f}")
-                if len(filtered_rows) >= 5:
-                    logger.info(f"Top 5 scores: {[f'{s:.4f}' for s in sorted(scores, reverse=True)[:5]]}")
-                    logger.info(f"Bottom 5 scores: {[f'{s:.4f}' for s in sorted(scores)[:5]]}")
+            if all_rows:
+                scores = [row[8] for row in all_rows if row[8] is not None]
+                if scores:
+                    logger.info(f"Score máximo: {max(scores):.4f}, Score mínimo: {min(scores):.4f}, Score promedio: {sum(scores)/len(scores):.4f}")
+                    if len(scores) >= 5:
+                        logger.info(f"Top 5 scores: {[f'{s:.4f}' for s in sorted(scores, reverse=True)[:5]]}")
+                        logger.info(f"Bottom 5 scores: {[f'{s:.4f}' for s in sorted(scores)[:5]]}")
 
-            # Limitar a máximo 500 resultados después del filtrado
-            max_results = 500
-            if len(filtered_rows) > max_results:
-                logger.info(f"Limitando resultados de {len(filtered_rows)} a {max_results}")
-                filtered_rows = filtered_rows[:max_results]
+            logger.info(f"Retornando {len(rows)} resultados (offset: {offset}, total disponibles: {total_count})")
 
-            # Retornamos los resultados filtrados
-            rows = filtered_rows
-            total_count = len(filtered_rows)
-            has_more = False  # Ya no aplicamos paginación en backend
-            filtered_by_similarity = len(filtered_rows) < len(all_rows)  # True si filtramos algunos
-
-            logger.info(f"Retornando {len(rows)} resultados totales (filtrados: {filtered_by_similarity})")
+            # Threshold ya no se usa para filtrar, pero lo registramos por compatibilidad
+            filtered_by_similarity = False  # Ya no filtramos, solo ordenamos
 
             # Si tenemos resultados, retornamos
             if not rows:

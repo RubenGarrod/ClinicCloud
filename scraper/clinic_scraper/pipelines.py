@@ -90,24 +90,10 @@ class PostgreSQLPipeline:
 
             # Obtener modelo compartido del gestor unificado (se carga solo una vez al inicio)
             model_manager = get_model_manager()
-            base_model = model_manager.get_embedding_model()
-
-            if base_model:
-                # Eliminar el módulo Normalize para prevenir normalización automática
-                modules_without_normalize = [
-                    module for module in base_model
-                    if type(module).__name__ != 'Normalize'
-                ]
-
-                # Reconstruir el modelo sin normalización
-                base_model._modules.clear()
-                for idx, module in enumerate(modules_without_normalize):
-                    base_model._modules[str(idx)] = module
-
-                self.model = base_model
-                spider.logger.info("✅ Usando modelo compartido S-PubMedBert-MS-MARCO (768 dimensiones, sin normalización)")
+            self.model = model_manager.get_embedding_model()
+            if self.model:
+                spider.logger.info("✅ Usando modelo compartido S-PubMedBert-MS-MARCO (768 dimensiones)")
             else:
-                self.model = None
                 spider.logger.warning("⚠️  Modelo no disponible, se usarán vectores NULL como fallback")
             
             spider.logger.info("Conexión a la base de datos establecida correctamente")
@@ -195,7 +181,6 @@ class PostgreSQLPipeline:
                 # Usamos el modelo BiomedNLP-PubMedBERT para generar el embedding
                 # El modelo genera directamente 768 dimensiones (su dimensión nativa)
                 # NO necesitamos padding porque ya tiene el tamaño correcto
-                # El módulo Normalize fue eliminado en open_spider(), así que los vectores no están normalizados
                 embedding = self.model.encode(text)
 
                 # Verificamos que el embedding tenga la dimensión esperada
@@ -206,7 +191,7 @@ class PostgreSQLPipeline:
                     )
                     return self._adjust_embedding_dimension(embedding, spider)
 
-                spider.logger.debug(f"Embedding generado correctamente: 768 dimensiones (sin normalización)")
+                spider.logger.debug(f"Embedding generado correctamente: 768 dimensiones")
                 return embedding.tolist()
 
             except Exception as e:

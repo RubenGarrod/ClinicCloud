@@ -63,30 +63,16 @@ class ModelManager:
         return cls._instance
 
     def get_embedding_model(self):
-        """Obtiene el modelo de embeddings (S-PubMedBert) sin normalización"""
+        """Obtiene el modelo de embeddings (S-PubMedBert)"""
         if self._embedding_model is None:
             with self._loading_lock:
                 if self._embedding_model is None:  # Double-check
                     logger.info("🔄 Cargando modelo S-PubMedBert-MS-MARCO...")
                     from sentence_transformers import SentenceTransformer
 
-                    # Cargar modelo base
-                    model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
-
-                    # Eliminar el módulo Normalize para prevenir normalización automática
-                    # Esto permite mejor discriminación semántica en los scores de similaridad
-                    modules_without_normalize = [
-                        module for module in model
-                        if type(module).__name__ != 'Normalize'
-                    ]
-
-                    # Reconstruir el modelo sin normalización
-                    model._modules.clear()
-                    for idx, module in enumerate(modules_without_normalize):
-                        model._modules[str(idx)] = module
-
-                    self._embedding_model = model
-                    logger.info("✅ Modelo S-PubMedBert cargado (768 dims, sin normalización)")
+                    # Cargar modelo (genera embeddings de ~15.0 de norma L2)
+                    self._embedding_model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
+                    logger.info("✅ Modelo S-PubMedBert cargado (768 dims)")
         return self._embedding_model
 
     def get_summarization_model(self):
