@@ -94,10 +94,12 @@ class ModelManager:
             texts: Lista de textos a procesar
 
         Returns:
-            Lista de vectores de 768 dimensiones
+            Lista de vectores de 768 dimensiones (sin normalizar)
         """
         model = self.get_embedding_model()
-        embeddings = model.encode(texts, show_progress_bar=True, batch_size=32)
+        # IMPORTANTE: normalize_embeddings=False para mejor discriminación semántica
+        # Los vectores normalizados causan scores artificialmente altos (0.93-0.94)
+        embeddings = model.encode(texts, show_progress_bar=True, batch_size=32, normalize_embeddings=False)
         return [emb.tolist() for emb in embeddings]
 
     def generate_summaries_batch(self, abstracts: List[str], max_length: int = 150) -> List[str]:
