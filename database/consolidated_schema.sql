@@ -413,7 +413,7 @@ BEGIN
     SELECT
         c.nombre as categoria,
         COUNT(d.id) as total_documentos,
-        MAX(d.fecha_publicacion) as ultima_actualizacion
+        COALESCE(MAX(d.fecha_publicacion), NOW()) as ultima_actualizacion
     FROM categoria c
     LEFT JOIN documento d ON d.id_categoria = c.id
     GROUP BY c.nombre
@@ -421,7 +421,11 @@ BEGIN
     DO UPDATE SET
         total_documentos = EXCLUDED.total_documentos,
         ultima_actualizacion = EXCLUDED.ultima_actualizacion,
-        dias_desde_ultimo_scrape = EXTRACT(DAY FROM (NOW() - EXCLUDED.ultima_actualizacion));
+        dias_desde_ultimo_scrape = CASE
+            WHEN EXCLUDED.ultima_actualizacion IS NOT NULL
+            THEN EXTRACT(DAY FROM (NOW() - EXCLUDED.ultima_actualizacion))::INTEGER
+            ELSE 999
+        END;
 END;
 $$ LANGUAGE plpgsql;
 
