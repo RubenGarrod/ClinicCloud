@@ -304,19 +304,58 @@ class PubMedFetcher:
                     authors.append(name)
             author_str = ', '.join(authors[:20])  # Limitar a 20 autores
 
-            # Fecha
+            # Fecha - Intentar extraer de múltiples ubicaciones
+            # Primero intentar PubDate (fecha de publicación del journal)
             year = article_xml.xpath('.//PubDate/Year/text()')
             month = article_xml.xpath('.//PubDate/Month/text()')
             day = article_xml.xpath('.//PubDate/Day/text()')
 
+            # Si PubDate no tiene info completa, intentar ArticleDate (fecha electrónica)
+            if not year or not month:
+                year = article_xml.xpath('.//ArticleDate/Year/text()') or year
+                month = article_xml.xpath('.//ArticleDate/Month/text()') or month
+                day = article_xml.xpath('.//ArticleDate/Day/text()') or day
+
+            # Si aún no hay fecha, intentar DateCompleted o DateRevised
+            if not year or not month:
+                year = article_xml.xpath('.//DateCompleted/Year/text()') or year
+                month = article_xml.xpath('.//DateCompleted/Month/text()') or month
+                day = article_xml.xpath('.//DateCompleted/Day/text()') or day
+
             fecha = None
             if year:
-                fecha_str = f"{year[0]}"
+                # Mapeo de meses textuales a numéricos
+                month_map = {
+                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12',
+                    'January': '01', 'February': '02', 'March': '03', 'April': '04',
+                    'June': '06', 'July': '07', 'August': '08',
+                    'September': '09', 'October': '10', 'November': '11', 'December': '12'
+                }
+
+                year_str = year[0] if year else None
+                month_str = '01'  # Default
+                day_str = '01'    # Default
+
                 if month:
-                    fecha_str += f"-{month[0]}"
-                    if day:
-                        fecha_str += f"-{day[0]}"
-                fecha = fecha_str
+                    month_val = month[0]
+                    # Convertir mes textual a numérico si es necesario
+                    if month_val in month_map:
+                        month_str = month_map[month_val]
+                    elif month_val.isdigit():
+                        month_str = month_val.zfill(2)
+                    else:
+                        month_str = '01'
+
+                if day and day[0].isdigit():
+                    day_str = day[0].zfill(2)
+
+                if year_str:
+                    fecha = f"{year_str}-{month_str}-{day_str}"
+                    logger.debug(f"PMID {pmid}: Fecha extraída: {fecha}")
+                else:
+                    logger.warning(f"PMID {pmid}: No se pudo extraer fecha")
 
             # MeSH Terms
             mesh_terms = article_xml.xpath('.//MeshHeading/DescriptorName/text()')
@@ -556,16 +595,22 @@ class DatabaseManager:
 
                     # Parsear fecha
                     fecha = None
-                    if doc.get('fecha_publicacion'):
+                    fecha_str = doc.get('fecha_publicacion')
+                    if fecha_str:
                         try:
                             for fmt in ['%Y-%m-%d', '%Y-%m', '%Y']:
                                 try:
-                                    fecha = datetime.strptime(doc['fecha_publicacion'], fmt)
+                                    fecha = datetime.strptime(fecha_str, fmt)
+                                    logger.debug(f"Fecha parseada correctamente: {fecha_str} -> {fecha}")
                                     break
                                 except ValueError:
                                     continue
-                        except:
-                            pass
+                            if not fecha:
+                                logger.warning(f"No se pudo parsear fecha '{fecha_str}' para documento: {doc.get('titulo', 'N/A')[:50]}")
+                        except Exception as e:
+                            logger.error(f"Error parseando fecha '{fecha_str}': {e}")
+                    else:
+                        logger.warning(f"Documento sin fecha: {doc.get('titulo', 'N/A')[:50]}")
 
                     # Insertar documento
                     self.cursor.execute(
