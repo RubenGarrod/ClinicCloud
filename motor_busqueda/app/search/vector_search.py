@@ -172,7 +172,11 @@ def get_transformer_embedding(query_text: str) -> List[float]:
             # - Convierte a minúsculas (uncased)
             # - Tokeniza con vocabulario médico
             # - Genera vector de 768 dimensiones
-            embedding = model.encode(query_text)
+            #
+            # IMPORTANTE: normalize_embeddings=False para que los vectores NO estén normalizados
+            # Esto permite mejor discriminación semántica y scores más informativos
+            # Los vectores normalizados causan que todos los documentos parezcan similares (0.93-0.94)
+            embedding = model.encode(query_text, normalize_embeddings=False)
 
             # Verificar dimensión (debe ser 768 para BiomedNLP-PubMedBERT)
             if len(embedding) != 768:
@@ -183,7 +187,7 @@ def get_transformer_embedding(query_text: str) -> List[float]:
                 # Intentar ajustar la dimensión como medida de emergencia
                 return _adjust_embedding_to_768(embedding)
 
-            logger.debug(f"✓ Embedding generado: 768 dimensiones (modelo médico)")
+            logger.debug(f"✓ Embedding generado: 768 dimensiones (modelo médico, sin normalizar)")
             return embedding.tolist()
 
         else:
@@ -268,7 +272,7 @@ async def perform_vector_search(
     id_categoria: Optional[int] = None,
     limit: int = 25,
     offset: int = 0,
-    similarity_threshold: float = 0.15
+    similarity_threshold: float = 0.65
 ) -> Tuple[List[Dict[Any, Any]], int, bool, bool]:
     """
     Realiza una búsqueda semántica de documentos médicos usando embeddings.

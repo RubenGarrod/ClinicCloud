@@ -181,7 +181,11 @@ class PostgreSQLPipeline:
                 # Usamos el modelo BiomedNLP-PubMedBERT para generar el embedding
                 # El modelo genera directamente 768 dimensiones (su dimensión nativa)
                 # NO necesitamos padding porque ya tiene el tamaño correcto
-                embedding = self.model.encode(text)
+                #
+                # IMPORTANTE: normalize_embeddings=False para que los vectores NO estén normalizados
+                # Esto permite mejor discriminación semántica y scores más informativos
+                # Los vectores normalizados causan que todos los documentos parezcan similares (0.93-0.94)
+                embedding = self.model.encode(text, normalize_embeddings=False)
 
                 # Verificamos que el embedding tenga la dimensión esperada
                 if len(embedding) != 768:
@@ -191,7 +195,7 @@ class PostgreSQLPipeline:
                     )
                     return self._adjust_embedding_dimension(embedding, spider)
 
-                spider.logger.debug(f"Embedding generado correctamente: 768 dimensiones")
+                spider.logger.debug(f"Embedding generado correctamente: 768 dimensiones (sin normalizar)")
                 return embedding.tolist()
 
             except Exception as e:
