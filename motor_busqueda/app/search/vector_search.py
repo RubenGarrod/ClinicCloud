@@ -39,18 +39,19 @@ _model = None
 
 def get_model():
     """
-    Retorna una instancia única del modelo SentenceTransformer médico.
+    Retorna una instancia única del modelo SentenceTransformer médico sin normalización.
 
     Implementa el patrón Singleton para cargar el modelo una sola vez
     y reutilizarlo en todas las búsquedas posteriores.
 
     Returns:
-        SentenceTransformer: Instancia del modelo BiomedNLP-PubMedBERT
+        SentenceTransformer: Instancia del modelo BiomedNLP-PubMedBERT sin módulo Normalize
         None: Si hubo error al cargar el modelo
 
     Nota:
         El modelo se descarga automáticamente la primera vez desde HuggingFace.
         Ocupa aproximadamente 420MB y se cachea localmente.
+        El módulo Normalize se elimina para prevenir normalización automática.
     """
     global _model
     if _model is None:
@@ -59,11 +60,26 @@ def get_model():
             logger.info("Esto puede tardar unos minutos la primera vez (descarga del modelo)")
 
             # Cargar el modelo especializado en semantic search médico
-            _model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
+            model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
+
+            # Eliminar el módulo Normalize para prevenir normalización automática
+            # Esto permite mejor discriminación semántica en los scores de similaridad
+            modules_without_normalize = [
+                module for module in model
+                if type(module).__name__ != 'Normalize'
+            ]
+
+            # Reconstruir el modelo sin normalización
+            model._modules.clear()
+            for idx, module in enumerate(modules_without_normalize):
+                model._modules[str(idx)] = module
+
+            _model = model
 
             logger.info("✓ Modelo S-PubMedBert-MS-MARCO cargado correctamente")
             logger.info("  - Dimensión: 768 (nativa, sin padding)")
             logger.info("  - Especialización: Semantic search en textos médicos")
+            logger.info("  - Normalización: Deshabilitada (módulo Normalize eliminado)")
 
         except Exception as e:
             logger.error(f"✗ Error al cargar modelo BiomedNLP-PubMedBERT: {e}")
@@ -172,11 +188,8 @@ def get_transformer_embedding(query_text: str) -> List[float]:
             # - Convierte a minúsculas (uncased)
             # - Tokeniza con vocabulario médico
             # - Genera vector de 768 dimensiones
-            #
-            # IMPORTANTE: normalize_embeddings=False para que los vectores NO estén normalizados
-            # Esto permite mejor discriminación semántica y scores más informativos
-            # Los vectores normalizados causan que todos los documentos parezcan similares (0.93-0.94)
-            embedding = model.encode(query_text, normalize_embeddings=False)
+            # El módulo Normalize fue eliminado en get_model(), así que no hay normalización
+            embedding = model.encode(query_text)
 
             # Verificar dimensión (debe ser 768 para BiomedNLP-PubMedBERT)
             if len(embedding) != 768:
@@ -187,7 +200,7 @@ def get_transformer_embedding(query_text: str) -> List[float]:
                 # Intentar ajustar la dimensión como medida de emergencia
                 return _adjust_embedding_to_768(embedding)
 
-            logger.debug(f"✓ Embedding generado: 768 dimensiones (modelo médico, sin normalizar)")
+            logger.debug(f"✓ Embedding generado: 768 dimensiones (modelo médico, sin normalización)")
             return embedding.tolist()
 
         else:

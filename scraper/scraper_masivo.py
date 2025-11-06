@@ -63,14 +63,30 @@ class ModelManager:
         return cls._instance
 
     def get_embedding_model(self):
-        """Obtiene el modelo de embeddings (S-PubMedBert)"""
+        """Obtiene el modelo de embeddings (S-PubMedBert) sin normalización"""
         if self._embedding_model is None:
             with self._loading_lock:
                 if self._embedding_model is None:  # Double-check
                     logger.info("🔄 Cargando modelo S-PubMedBert-MS-MARCO...")
                     from sentence_transformers import SentenceTransformer
-                    self._embedding_model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
-                    logger.info("✅ Modelo S-PubMedBert cargado (768 dims)")
+
+                    # Cargar modelo base
+                    model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
+
+                    # Eliminar el módulo Normalize para prevenir normalización automática
+                    # Esto permite mejor discriminación semántica en los scores de similaridad
+                    modules_without_normalize = [
+                        module for module in model
+                        if type(module).__name__ != 'Normalize'
+                    ]
+
+                    # Reconstruir el modelo sin normalización
+                    model._modules.clear()
+                    for idx, module in enumerate(modules_without_normalize):
+                        model._modules[str(idx)] = module
+
+                    self._embedding_model = model
+                    logger.info("✅ Modelo S-PubMedBert cargado (768 dims, sin normalización)")
         return self._embedding_model
 
     def get_summarization_model(self):
@@ -97,9 +113,8 @@ class ModelManager:
             Lista de vectores de 768 dimensiones (sin normalizar)
         """
         model = self.get_embedding_model()
-        # IMPORTANTE: normalize_embeddings=False para mejor discriminación semántica
-        # Los vectores normalizados causan scores artificialmente altos (0.93-0.94)
-        embeddings = model.encode(texts, show_progress_bar=True, batch_size=32, normalize_embeddings=False)
+        # Generar embeddings - el modelo ya no tiene el módulo Normalize
+        embeddings = model.encode(texts, show_progress_bar=True, batch_size=32)
         return [emb.tolist() for emb in embeddings]
 
     def generate_summaries_batch(self, abstracts: List[str], max_length: int = 150) -> List[str]:
