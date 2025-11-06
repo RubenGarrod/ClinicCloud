@@ -34,6 +34,14 @@ import signal
 import multiprocessing as mp
 from queue import Queue
 import threading
+import random
+
+# Import query templates
+try:
+    from query_templates import MEDICAL_QUERIES, QUERY_MODIFIERS, TRENDING_TOPICS
+except ImportError:
+    logger.warning("query_templates.py not found. Using fallback queries.")
+    MEDICAL_QUERIES = None
 
 # Logging setup
 logging.basicConfig(
@@ -668,6 +676,95 @@ class DatabaseManager:
             logger.error(f"❌ Error en insert_documents_batch: {e}")
             self.conn.rollback()
 
+    def track_query_execution(self, query_text: str, categoria: str,
+                               pmids_encontrados: int, pmids_nuevos: int,
+                               pmids_insertados: int, duracion: int):
+        """
+        Registra la ejecución de una query para tracking.
+
+        Args:
+            query_text: Texto de la query ejecutada
+            categoria: Categoría médica asociada
+            pmids_encontrados: PMIDs totales encontrados
+            pmids_nuevos: PMIDs que no estaban procesados
+            pmids_insertados: PMIDs insertados exitosamente
+            duracion: Duración en segundos
+        """
+        try:
+            self.cursor.execute(
+                """
+                INSERT INTO query_tracking
+                (query_text, categoria, pmids_encontrados, pmids_nuevos, pmids_insertados, duracion_segundos)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (query_text, categoria, pmids_encontrados, pmids_nuevos, pmids_insertados, duracion)
+            )
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error registrando query tracking: {e}")
+            self.conn.rollback()
+
+    def get_category_priorities(self) -> List[Dict]:
+        """
+        Obtiene prioridades de categorías basadas en cobertura.
+
+        Returns:
+            Lista de diccionarios con categoría y prioridad
+        """
+        try:
+            # Actualizar cobertura
+            self.cursor.execute("SELECT update_categoria_coverage()")
+            self.conn.commit()
+
+            # Obtener prioridades
+            self.cursor.execute(
+                """
+                SELECT categoria, priority_score, total_documentos, dias_desde_ultimo_scrape
+                FROM query_priority
+                ORDER BY priority_score DESC
+                LIMIT 50
+                """
+            )
+
+            results = []
+            for row in self.cursor.fetchall():
+                results.append({
+                    'categoria': row[0],
+                    'priority_score': row[1],
+                    'total_documentos': row[2],
+                    'dias_desde_ultimo_scrape': row[3]
+                })
+
+            return results
+
+        except Exception as e:
+            logger.error(f"Error obteniendo prioridades: {e}")
+            return []
+
+    def get_recently_scraped_queries(self, days: int = 7) -> List[str]:
+        """
+        Obtiene queries ejecutadas recientemente.
+
+        Args:
+            days: Días hacia atrás a considerar
+
+        Returns:
+            Lista de query texts ejecutadas recientemente
+        """
+        try:
+            self.cursor.execute(
+                """
+                SELECT DISTINCT query_text
+                FROM query_tracking
+                WHERE fecha_ejecutada > NOW() - INTERVAL '%s days'
+                """,
+                (days,)
+            )
+            return [row[0] for row in self.cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error obteniendo queries recientes: {e}")
+            return []
+
     def close(self):
         """Cierra la conexión"""
         if self.cursor:
@@ -761,16 +858,43 @@ class MassiveScraper:
 
         # Fetch PMIDs con filtro de fecha (últimos 30 días)
         all_pmids = []
+        all_pmids_by_query = {}  # Para tracking
         days_back = int(os.getenv('SCRAPER_DAYS_BACK', '30'))  # Configurable vía env
 
-        for query in search_queries:
+        for query_text, categoria in search_queries:
             if not self._should_continue():
                 break
 
             # Buscar con filtro de fecha
-            pmids = self.fetcher.search_ids(query, max_results=500, days_back=days_back)
-            all_pmids.extend(pmids)
+            query_start = time.time()
+            pmids = self.fetcher.search_ids(query_text, max_results=500, days_back=days_back)
+            query_duration = int(time.time() - query_start)
+
+            # Filtrar PMIDs nuevos (no procesados)
+            pmids_nuevos = self.db.filter_unprocessed_pmids(pmids)
+
+            # Tracking de esta query
+            all_pmids_by_query[query_text] = {
+                'categoria': categoria,
+                'pmids_encontrados': len(pmids),
+                'pmids_nuevos': len(pmids_nuevos),
+                'duracion': query_duration
+            }
+
+            # Registrar query execution
+            self.db.track_query_execution(
+                query_text=query_text,
+                categoria=categoria,
+                pmids_encontrados=len(pmids),
+                pmids_nuevos=len(pmids_nuevos),
+                pmids_insertados=0,  # Se actualizará después
+                duracion=query_duration
+            )
+
+            all_pmids.extend(pmids_nuevos)
             self.stats['fetched'] += len(pmids)
+
+            logger.info(f"📥 Query: '{query_text[:60]}...' → {len(pmids)} encontrados, {len(pmids_nuevos)} nuevos")
 
             if len(all_pmids) >= self.max_docs:
                 break
@@ -778,9 +902,6 @@ class MassiveScraper:
         # Eliminar duplicados en la lista
         all_pmids = list(set(all_pmids))
         logger.info(f"📊 PMIDs únicos obtenidos: {len(all_pmids)}")
-
-        # Filtrar PMIDs ya procesados
-        all_pmids = self.db.filter_unprocessed_pmids(all_pmids)
 
         if not all_pmids:
             logger.warning("⚠️  No hay PMIDs nuevos para procesar")
@@ -805,29 +926,125 @@ class MassiveScraper:
         # Reporte final
         self._print_final_report()
 
-    def _generate_search_queries(self) -> List[str]:
-        """Genera términos de búsqueda médicos"""
-        categorias = [
-            "oncology", "cardiology", "neurology", "endocrinology",
-            "gastroenterology", "pulmonology", "nephrology", "infectious disease",
-            "immunology", "hematology", "dermatology", "pediatrics",
-            "geriatrics", "obstetrics gynecology", "rheumatology",
-            "ophthalmology", "otolaryngology", "psychiatry",
-            "traumatology", "urology", "medical genetics", "general medicine"
-        ]
+    def _generate_search_queries(self) -> List[Tuple[str, str]]:
+        """
+        Genera términos de búsqueda médicos con sistema híbrido.
 
-        sufijos = [
-            "treatment", "therapy", "diagnosis", "prevention",
-            "management", "research", "clinical trial"
-        ]
+        Sistema híbrido que combina:
+        1. Queries específicas del query_templates.py
+        2. Rotación inteligente basada en prioridad de categorías
+        3. Randomización para evitar repetición
+        4. Balance automático basado en cobertura
 
-        queries = []
-        for cat in categorias:
-            queries.append(cat)
-            for suf in sufijos[:3]:  # Solo 3 sufijos por categoría
-                queries.append(f"{cat} {suf}")
+        Returns:
+            Lista de tuplas (query_text, categoria)
+        """
+        logger.info("🔄 Generando queries con sistema híbrido...")
 
-        return queries
+        # Obtener prioridades de categorías desde BD
+        priorities = self.db.get_category_priorities()
+        recently_scraped = set(self.db.get_recently_scraped_queries(days=3))
+
+        logger.info(f"📊 Categorías con prioridad (top 10):")
+        for i, p in enumerate(priorities[:10], 1):
+            logger.info(f"   {i}. {p['categoria']}: score={p['priority_score']}, docs={p['total_documentos']}, días={p['dias_desde_ultimo_scrape']}")
+
+        queries_with_category = []
+
+        # Si tenemos MEDICAL_QUERIES, usarlo; sino, fallback
+        if MEDICAL_QUERIES:
+            # Crear pool de queries por categoría
+            for category_data in priorities:
+                categoria_key = category_data['categoria'].replace(' ', ' ')
+
+                # Buscar en MEDICAL_QUERIES (key matching flexible)
+                matching_key = None
+                for key in MEDICAL_QUERIES.keys():
+                    if key.lower().replace(' ', '') == categoria_key.lower().replace(' ', ''):
+                        matching_key = key
+                        break
+
+                if not matching_key:
+                    # Fallback: usar queries generales
+                    queries_with_category.append((categoria_key, categoria_key))
+                    continue
+
+                cat_queries = MEDICAL_QUERIES[matching_key]
+
+                # Mezclar specific queries y mesh terms
+                available_queries = []
+
+                # Agregar specific queries
+                if 'specific' in cat_queries:
+                    available_queries.extend(cat_queries['specific'])
+
+                # Agregar MeSH terms (más específicos)
+                if 'mesh_terms' in cat_queries:
+                    available_queries.extend(cat_queries['mesh_terms'])
+
+                # Agregar queries generales
+                if 'general' in cat_queries:
+                    available_queries.extend(cat_queries['general'])
+
+                # Filtrar queries recientemente ejecutadas
+                available_queries = [q for q in available_queries if q not in recently_scraped]
+
+                # Randomizar y seleccionar según prioridad
+                random.shuffle(available_queries)
+
+                # Número de queries por categoría basado en prioridad
+                num_queries = max(1, int(category_data['priority_score'] / 10))
+                selected = available_queries[:num_queries]
+
+                for query in selected:
+                    queries_with_category.append((query, categoria_key))
+
+            # Agregar trending topics (10% del total)
+            if TRENDING_TOPICS:
+                num_trending = max(5, len(queries_with_category) // 10)
+                trending_queries = random.sample(TRENDING_TOPICS, min(num_trending, len(TRENDING_TOPICS)))
+                for query in trending_queries:
+                    if query not in recently_scraped:
+                        queries_with_category.append((query, "General Medicine"))
+
+        else:
+            # Fallback: sistema antiguo mejorado
+            logger.warning("⚠️  Usando sistema de queries fallback")
+            categorias = [
+                "oncology", "cardiology", "neurology", "endocrinology",
+                "gastroenterology", "pulmonology", "nephrology", "infectious disease",
+                "immunology", "hematology", "dermatology", "pediatrics",
+                "geriatrics", "obstetrics gynecology", "rheumatology",
+                "ophthalmology", "otolaryngology", "psychiatry",
+                "traumatology", "urology", "medical genetics", "general medicine"
+            ]
+
+            sufijos = [
+                "treatment", "therapy", "diagnosis", "prevention",
+                "management", "research", "clinical trial", "guidelines"
+            ]
+
+            # Randomizar orden de categorías
+            random.shuffle(categorias)
+
+            for cat in categorias:
+                # Query general
+                queries_with_category.append((cat, cat))
+
+                # Randomizar sufijos y seleccionar algunos
+                random.shuffle(sufijos)
+                for suf in sufijos[:3]:
+                    query = f"{cat} {suf}"
+                    if query not in recently_scraped:
+                        queries_with_category.append((query, cat))
+
+        # Randomizar orden final para evitar sesgo
+        random.shuffle(queries_with_category)
+
+        logger.info(f"✅ {len(queries_with_category)} queries generadas con sistema híbrido")
+        logger.info(f"🔒 {len(recently_scraped)} queries filtradas (ejecutadas recientemente)")
+
+        return queries_with_category
 
     def _process_batch(self, pmids: List[str]):
         """Procesa un batch de PMIDs"""
