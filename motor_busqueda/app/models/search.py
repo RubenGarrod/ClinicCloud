@@ -26,7 +26,7 @@ class SearchQuery(BaseModel):
     id_categoria: Optional[int] = Field(None, description="ID de la categoría para filtrar resultados")
     limit: int = Field(25, description="Número máximo de resultados")
     offset: int = Field(0, description="Posición inicial para paginación")
-    similarity_threshold: float = Field(0.80, description="Umbral mínimo de similitud (0-1, recomendado: 0.75-0.85 para búsquedas médicas precisas)")
+    similarity_threshold: float = Field(0.0, description="Umbral mínimo de inner product (no usado en ranking mode, se devuelven los top N por score)")
 
 class SearchResponse(BaseModel):
     results: List[SearchResult]

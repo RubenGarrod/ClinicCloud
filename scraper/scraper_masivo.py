@@ -69,6 +69,8 @@ class ModelManager:
                 if self._embedding_model is None:  # Double-check
                     logger.info("🔄 Cargando modelo S-PubMedBert-MS-MARCO...")
                     from sentence_transformers import SentenceTransformer
+
+                    # Cargar modelo (genera embeddings de ~15.0 de norma L2)
                     self._embedding_model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
                     logger.info("✅ Modelo S-PubMedBert cargado (768 dims)")
         return self._embedding_model
@@ -94,9 +96,10 @@ class ModelManager:
             texts: Lista de textos a procesar
 
         Returns:
-            Lista de vectores de 768 dimensiones
+            Lista de vectores de 768 dimensiones (sin normalizar)
         """
         model = self.get_embedding_model()
+        # Generar embeddings - el modelo ya no tiene el módulo Normalize
         embeddings = model.encode(texts, show_progress_bar=True, batch_size=32)
         return [emb.tolist() for emb in embeddings]
 
