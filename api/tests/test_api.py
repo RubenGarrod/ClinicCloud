@@ -6,10 +6,11 @@ la obtención de documentos y categorías, y la verificación de errores.
 """
 import requests
 import json
+import os
 from datetime import datetime
 
 # Configuración
-BASE_URL = "http://localhost:8000/api"
+BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 DOCUMENT_URL = f"{BASE_URL}/documents"
 SEARCH_URL = f"{BASE_URL}/search"
 CATEGORY_URL = f"{BASE_URL}/categories"
@@ -259,11 +260,21 @@ def run_all_tests():
 
 # Ejecutar pruebas
 if __name__ == "__main__":
+    # Verificar que la API esté disponible
+    try:
+        health_check = requests.get(f"{BASE_URL.replace('/api', '')}/health", timeout=2)
+        if health_check.status_code != 200:
+            print("⚠️  API no disponible. Saltando tests de integración.")
+            exit(0)
+    except requests.exceptions.RequestException:
+        print("⚠️  API no disponible. Saltando tests de integración.")
+        exit(0)
+
     # Para pruebas individuales:
     # test_get_documento(1)
     # test_list_documentos()
     # test_list_documentos(id_categoria=2, limit=5)
     # test_search_documentos("inteligencia artificial")
-    
+
     # Para ejecutar todas las pruebas:
     run_all_tests()

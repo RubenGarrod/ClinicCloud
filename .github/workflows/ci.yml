@@ -118,7 +118,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd frontend
-        npm ci
+        npm ci --legacy-peer-deps
 
     - name: Run linting (ESLint)
       run: |
@@ -154,6 +154,9 @@ jobs:
   # ===============================================
   security-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
     - name: Checkout code
