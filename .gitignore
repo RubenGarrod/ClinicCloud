@@ -144,12 +144,16 @@ $RECYCLE.BIN/
 *.sublime-project
 *.sublime-workspace
 .project
-.classpath
+*.classpath
 .c9/
 *.launch
 .settings/
 *.tmproj
 *.code-workspace
+
+# Claude Code
+# ====================================================
+.claude/
 
 # Logs
 # ====================================================
