@@ -138,6 +138,7 @@ $RECYCLE.BIN/
 !.vscode/settings.json.example
 !.vscode/extensions.json.example
 .idea/
+.claude/
 *.swp
 *.swo
 *~
@@ -151,9 +152,6 @@ $RECYCLE.BIN/
 *.tmproj
 *.code-workspace
 
-# Claude Code
-# ====================================================
-.claude/
 
 # Logs
 # ====================================================
