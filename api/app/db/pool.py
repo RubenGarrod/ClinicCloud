@@ -102,8 +102,6 @@ async def get_pool() -> asyncpg.Pool:
     Raises:
         RuntimeError: Si el pool no está disponible
     """
-    global _pool
-
     if _pool is None:
         logger.warning("Pool no inicializado, inicializando automáticamente...")
         await init_pool()

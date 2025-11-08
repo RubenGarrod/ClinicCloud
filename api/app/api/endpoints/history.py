@@ -113,7 +113,7 @@ async def get_search_history(
             categories=row[3] if row[3] else None,
             date_from=row[4].isoformat() if row[4] else None,
             date_to=row[5].isoformat() if row[5] else None,
-            created_at=row[6].isoformat()
+            created_at=row[6].isoformat() if row[6] else datetime.now(timezone.utc).isoformat()
         ))
 
     return SearchHistoryResponse(total=total, items=items)
