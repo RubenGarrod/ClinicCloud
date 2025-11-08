@@ -45,10 +45,14 @@ async def report_issue(
         user_email = None
         user_name = None
 
+        # Debug logging (uncomment if needed for troubleshooting)
+        # logger.info(f"Report issue - current_user: {current_user is not None}, include_user_info: {request.include_user_info}")
+
         # Si está autenticado y quiere incluir su info
         if current_user and request.include_user_info:
             user_email = current_user.email
             user_name = current_user.name
+            # logger.info(f"Including user info: {user_name} ({user_email})")
 
         # Enviar email
         success = email_service.send_issue_report(

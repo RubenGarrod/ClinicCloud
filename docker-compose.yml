@@ -101,6 +101,15 @@ services:
 
       # Search Engine URL
       SEARCH_ENGINE_URL: ${SEARCH_ENGINE_URL:-http://search-engine:8001}
+
+      # Email/SMTP Configuration
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_EMAIL: ${SMTP_FROM:-noreply@cliniccloud.com}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-ClinicCloud}
+      APP_URL: ${APP_URL:-http://localhost}
     ports:
       - "8000:8000"
     depends_on:

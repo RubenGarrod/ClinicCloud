@@ -207,7 +207,7 @@ async def get_favorite_by_id(
                 publication_date=row[7],
                 notes=row[8],
                 tags=row[9],
-                favorited_at=row[10]
+                created_at=row[10]
             )
 
     except HTTPException:
@@ -287,7 +287,7 @@ async def update_favorite(
                 publication_date=row[7],
                 notes=row[8],
                 tags=row[9],
-                favorited_at=row[10]
+                created_at=row[10]
             )
 
     except HTTPException:

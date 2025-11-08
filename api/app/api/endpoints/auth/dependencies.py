@@ -143,7 +143,7 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Optional[UserResponse]:
     """
     Dependencia que obtiene el usuario actual si está autenticado.
@@ -157,10 +157,19 @@ async def get_current_user_optional(
     Returns:
         UserResponse | None: Usuario autenticado o None
     """
+    # Debug logging (uncomment if needed for troubleshooting)
+    # import logging
+    # logger = logging.getLogger(__name__)
+    # logger.info(f"get_current_user_optional - credentials received: {credentials is not None}")
+
     if not credentials:
+        # logger.info("No credentials provided, returning None")
         return None
 
     try:
-        return await get_current_user(credentials)
-    except HTTPException:
+        user = await get_current_user(credentials)
+        # logger.info(f"User authenticated: {user.email if user else 'None'}")
+        return user
+    except HTTPException as e:
+        # logger.warning(f"Authentication failed: {e.detail}")
         return None
