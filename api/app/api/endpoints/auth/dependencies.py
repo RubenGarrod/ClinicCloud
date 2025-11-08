@@ -157,19 +157,19 @@ async def get_current_user_optional(
     Returns:
         UserResponse | None: Usuario autenticado o None
     """
-    import logging
-    logger = logging.getLogger(__name__)
-
-    logger.info(f"get_current_user_optional - credentials received: {credentials is not None}")
+    # Debug logging (uncomment if needed for troubleshooting)
+    # import logging
+    # logger = logging.getLogger(__name__)
+    # logger.info(f"get_current_user_optional - credentials received: {credentials is not None}")
 
     if not credentials:
-        logger.info("No credentials provided, returning None")
+        # logger.info("No credentials provided, returning None")
         return None
 
     try:
         user = await get_current_user(credentials)
-        logger.info(f"User authenticated: {user.email if user else 'None'}")
+        # logger.info(f"User authenticated: {user.email if user else 'None'}")
         return user
     except HTTPException as e:
-        logger.warning(f"Authentication failed: {e.detail}")
+        # logger.warning(f"Authentication failed: {e.detail}")
         return None
