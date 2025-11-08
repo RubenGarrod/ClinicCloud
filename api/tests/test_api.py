@@ -3,6 +3,10 @@
 Script de prueba para la conexión y funcionalidad de la API de ClinicCloud.
 Este script realiza pruebas de los endpoints de la API, incluyendo la búsqueda de documentos,
 la obtención de documentos y categorías, y la verificación de errores.
+
+NOTE: This is an integration test that requires a running API instance.
+It is excluded from CI/CD pytest runs (see .github/workflows/ci.yml).
+To run manually: python test_api.py (with API running at localhost:8000)
 """
 import requests
 import json
