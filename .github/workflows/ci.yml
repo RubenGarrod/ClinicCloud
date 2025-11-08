@@ -258,7 +258,7 @@ jobs:
 
     - name: Start services with Docker Compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 60  # Wait for services to be ready
 
     - name: Wait for API health
@@ -280,13 +280,13 @@ jobs:
     - name: Show service logs on failure
       if: failure()
       run: |
-        docker-compose logs api
-        docker-compose logs frontend
-        docker-compose logs db
+        docker compose logs api
+        docker compose logs frontend
+        docker compose logs db
 
     - name: Cleanup
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
 
   # ===============================================
   # Notify on Success/Failure
