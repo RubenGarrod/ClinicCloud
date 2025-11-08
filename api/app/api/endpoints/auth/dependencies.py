@@ -143,7 +143,7 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Optional[UserResponse]:
     """
     Dependencia que obtiene el usuario actual si está autenticado.
