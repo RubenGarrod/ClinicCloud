@@ -1,10 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HelpCircle, Book, MessageCircle, FileText, Mail } from 'lucide-react';
 import Modal from './ui/Modal';
+import ContactModal from './ContactModal';
 
 const HelpModal = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
+  const handleSectionClick = (index) => {
+    switch(index) {
+      case 3: // Contact
+        setIsContactModalOpen(true);
+        break;
+      default:
+        // Por ahora, las otras secciones no hacen nada
+        break;
+    }
+  };
 
   // Definir las secciones directamente en el render para que se actualicen con el idioma
   const helpSections = React.useMemo(() => [
@@ -60,6 +73,7 @@ const HelpModal = ({ isOpen, onClose }) => {
             return (
               <button
                 key={index}
+                onClick={() => handleSectionClick(index)}
                 className="w-full text-left p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-200 dark:border-gray-700"
               >
                 <div className="flex items-start space-x-4">
@@ -79,6 +93,12 @@ const HelpModal = ({ isOpen, onClose }) => {
             );
           })}
         </div>
+
+        {/* Contact Modal */}
+        <ContactModal
+          isOpen={isContactModalOpen}
+          onClose={() => setIsContactModalOpen(false)}
+        />
 
         {/* Footer */}
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">

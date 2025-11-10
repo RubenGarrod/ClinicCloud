@@ -295,6 +295,28 @@
     "footer": "¿No encuentras lo que buscas?",
     "contactUs": "Contáctanos"
   },
+  "contact": {
+    "title": "Contacto",
+    "subtitle": "Envíanos un mensaje",
+    "name": "Nombre",
+    "namePlaceholder": "Tu nombre",
+    "nameRequired": "El nombre es obligatorio",
+    "email": "Email",
+    "emailPlaceholder": "tu@email.com",
+    "emailRequired": "El email es obligatorio",
+    "invalidEmail": "Email inválido",
+    "subject": "Asunto",
+    "subjectPlaceholder": "Asunto de tu mensaje",
+    "subjectRequired": "El asunto es obligatorio",
+    "message": "Mensaje",
+    "messagePlaceholder": "Escribe tu mensaje aquí...",
+    "messageRequired": "El mensaje es obligatorio",
+    "messageTooShort": "El mensaje debe tener al menos 10 caracteres",
+    "send": "Enviar",
+    "sending": "Enviando...",
+    "sendSuccess": "Mensaje enviado correctamente",
+    "sendError": "Error al enviar el mensaje"
+  },
   "avatar": {
     "selectAvatar": "Selecciona tu avatar",
     "backgroundColor": "Color de fondo",

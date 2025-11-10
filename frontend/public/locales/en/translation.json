@@ -289,6 +289,28 @@
     "footer": "Can't find what you're looking for?",
     "contactUs": "Contact us"
   },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Send us a message",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "nameRequired": "Name is required",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "emailRequired": "Email is required",
+    "invalidEmail": "Invalid email",
+    "subject": "Subject",
+    "subjectPlaceholder": "Subject of your message",
+    "subjectRequired": "Subject is required",
+    "message": "Message",
+    "messagePlaceholder": "Write your message here...",
+    "messageRequired": "Message is required",
+    "messageTooShort": "Message must be at least 10 characters long",
+    "send": "Send",
+    "sending": "Sending...",
+    "sendSuccess": "Message sent successfully",
+    "sendError": "Error sending message"
+  },
   "avatar": {
     "selectAvatar": "Select your avatar",
     "backgroundColor": "Background color",
