@@ -23,8 +23,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import authService from './services/authService';
 import Layout from './components/layout/Layout';
@@ -39,7 +39,27 @@ import PrivacyPage from './pages/PrivacyPage';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-function App() {
+// Componente puente para sincronizar preferencias del usuario con el tema
+function PreferencesSyncBridge() {
+  const { preferences } = useAuth();
+  const { setTheme, setFontSize } = useTheme();
+
+  useEffect(() => {
+    if (preferences) {
+      console.log('[App] Applying preferences to theme:', preferences);
+      if (preferences.theme) {
+        setTheme(preferences.theme);
+      }
+      if (preferences.fontSize) {
+        setFontSize(preferences.fontSize);
+      }
+    }
+  }, [preferences, setTheme, setFontSize]);
+
+  return null; // Este componente no renderiza nada
+}
+
+function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -127,39 +147,48 @@ function App() {
   };
 
   return (
+    <>
+      <PreferencesSyncBridge />
+      <Router>
+        <Layout>
+        <Routes>
+        <Route path="/" element={
+          <SearchPage
+            onSearch={handleSearch}
+            isLoading={isLoading}
+          />
+        } />
+        <Route path="/results" element={
+          <ResultsPage
+            query={searchQuery}
+            results={searchResults}
+            isLoading={isLoading}
+            onSearch={handleSearch}
+            onSelectDocument={setSelectedDocument}
+            selectedDocument={selectedDocument}
+            searchMetadata={searchMetadata}
+          />
+        } />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/favorites" element={<FavoritesPage />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        </Routes>
+        </Layout>
+      </Router>
+    </>
+  );
+}
+
+function App() {
+  return (
     <I18nextProvider i18n={i18n}>
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <Router>
-              <Layout>
-              <Routes>
-              <Route path="/" element={
-                <SearchPage
-                  onSearch={handleSearch}
-                  isLoading={isLoading}
-                />
-              } />
-              <Route path="/results" element={
-                <ResultsPage
-                  query={searchQuery}
-                  results={searchResults}
-                  isLoading={isLoading}
-                  onSearch={handleSearch}
-                  onSelectDocument={setSelectedDocument}
-                  selectedDocument={selectedDocument}
-                  searchMetadata={searchMetadata}
-                />
-              } />
-              <Route path="/history" element={<HistoryPage />} />
-              <Route path="/favorites" element={<FavoritesPage />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              </Routes>
-              </Layout>
-            </Router>
+            <AppContent />
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
