@@ -30,32 +30,16 @@ const Settings = () => {
 
   const [preferences, setPreferences] = useState(defaultPreferences);
 
-  // Cargar preferencias del backend cuando el usuario inicia sesión
+  // Cargar preferencias del contexto cuando estén disponibles
   useEffect(() => {
-    const loadPreferences = async () => {
-      try {
-        const token = authService.getToken();
-        if (!token || !user) return;
-
-        console.log('[Settings] Loading preferences from API...');
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/preferences`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('[Settings] Preferences loaded:', data);
-          setPreferences(prev => ({ ...prev, ...data }));
-        }
-      } catch (error) {
-        console.error('[Settings] Error loading preferences:', error);
-      }
-    };
-
-    loadPreferences();
-  }, [user]); // Se ejecuta cuando el usuario cambia (login/logout)
+    console.log('[Settings] useEffect - contextPreferences changed:', contextPreferences);
+    if (contextPreferences) {
+      console.log('[Settings] useEffect - Setting preferences from context');
+      setPreferences(prev => ({ ...prev, ...contextPreferences }));
+    } else {
+      console.log('[Settings] useEffect - No contextPreferences available');
+    }
+  }, [contextPreferences]);
 
   const handleChange = (field, value) => {
     setPreferences(prev => ({
