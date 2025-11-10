@@ -97,6 +97,11 @@
       "passwordsMustMatch": "Las contraseñas no coinciden",
       "passwordsNotMatch": "Las contraseñas no coinciden",
       "nameRequired": "El nombre es requerido",
+      "nameMinLength": "El nombre debe tener al menos 2 caracteres",
+      "nameMaxLength": "El nombre no puede exceder 100 caracteres",
+      "nameInvalidChars": "El nombre solo puede contener letras, espacios, guiones y apóstrofes",
+      "nameMustHaveLetter": "El nombre debe contener al menos una letra",
+      "nameMultipleSpaces": "El nombre no puede contener espacios múltiples consecutivos",
       "confirmPasswordRequired": "Confirma tu contraseña",
       "termsRequired": "Debes aceptar los términos y condiciones"
     }

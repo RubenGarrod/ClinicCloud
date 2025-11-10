@@ -47,7 +47,7 @@ from app.db.database import get_db_cursor, execute_query
 from app.api.endpoints.auth.dependencies import get_current_user
 from app.core.rate_limiter import get_rate_limiter
 from app.core.session_manager import SessionManager
-from app.core.validation import validate_email, validate_password_strength, validate_username
+from app.core.validation import validate_email, validate_password_strength, validate_username, validate_full_name
 
 # Configurar router para este módulo
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
@@ -192,12 +192,12 @@ async def register_user(
                 detail=f"Email inválido: {email_error}"
             )
 
-        # Validar nombre de usuario
-        name_valid, name_error = validate_username(user_data.name)
+        # Validar nombre completo
+        name_valid, name_error = validate_full_name(user_data.name)
         if not name_valid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Nombre inválido: {name_error}"
+                detail=name_error
             )
 
         # Validar fortaleza de contraseña

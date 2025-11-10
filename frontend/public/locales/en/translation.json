@@ -90,7 +90,14 @@
       "passwordRequired": "Password is required",
       "passwordTooShort": "Password must be at least 6 characters",
       "passwordsMustMatch": "Passwords do not match",
-      "nameRequired": "Name is required"
+      "nameRequired": "Name is required",
+      "nameMinLength": "Name must be at least 2 characters long",
+      "nameMaxLength": "Name must not exceed 100 characters",
+      "nameInvalidChars": "Name can only contain letters, spaces, hyphens and apostrophes",
+      "nameMustHaveLetter": "Name must contain at least one letter",
+      "nameMultipleSpaces": "Name cannot contain multiple consecutive spaces",
+      "confirmPasswordRequired": "Confirm your password",
+      "termsRequired": "You must accept the terms and conditions"
     }
   },
   "forgotPassword": {

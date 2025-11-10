@@ -39,26 +39,47 @@ export const AuthProvider = ({ children }) => {
 
   // Función para cargar preferencias del usuario
   const loadUserPreferences = async () => {
+    console.log('[AuthContext] loadUserPreferences - Starting...');
     try {
       const token = authService.getToken();
-      if (!token) return;
+      console.log('[AuthContext] loadUserPreferences - Token exists:', !!token);
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/preferences`, {
+      if (!token) {
+        console.log('[AuthContext] loadUserPreferences - No token, aborting');
+        return;
+      }
+
+      const url = `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/preferences`;
+      console.log('[AuthContext] loadUserPreferences - Fetching from:', url);
+
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('[AuthContext] loadUserPreferences - Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('[AuthContext] loadUserPreferences - Data received:', data);
         setPreferences(data);
         // Guardar en localStorage para persistencia
         localStorage.setItem('user_preferences', JSON.stringify(data));
+        console.log('[AuthContext] loadUserPreferences - Preferences set in state and localStorage');
+      } else {
+        const errorText = await response.text();
+        console.error('[AuthContext] loadUserPreferences - Failed:', response.status, errorText);
       }
     } catch (error) {
-      console.error('Error loading user preferences:', error);
+      console.error('[AuthContext] loadUserPreferences - Error:', error);
     }
   };
+
+  // Monitorear cambios en preferences
+  useEffect(() => {
+    console.log('[AuthContext] preferences state changed:', preferences);
+  }, [preferences]);
 
   // Inicializar estado de autenticación al cargar la app
   useEffect(() => {
@@ -67,54 +88,65 @@ export const AuthProvider = ({ children }) => {
 
   const initializeAuth = async () => {
     try {
+      console.log('[AuthContext] initializeAuth - Starting...');
       setIsLoading(true);
 
       // Verificar si hay token y datos guardados
       const token = authService.getToken();
       const userData = authService.getUserData();
+      console.log('[AuthContext] initializeAuth - Token exists:', !!token, 'UserData exists:', !!userData);
 
       if (token && userData) {
         // Verificar que el token siga siendo válido
         try {
+          console.log('[AuthContext] initializeAuth - Verifying token...');
           const verifiedUser = await authService.verifyToken();
           const normalizedUser = normalizeUserData(verifiedUser);
           setUser(normalizedUser);
           setIsAuthenticated(true);
+          console.log('[AuthContext] initializeAuth - User verified, calling loadUserPreferences...');
           // Cargar preferencias del usuario
           await loadUserPreferences();
+          console.log('[AuthContext] initializeAuth - Completed successfully');
         } catch (error) {
           // Token inválido, limpiar datos
-          console.log('Token expirado o inválido, limpiando sesión');
+          console.log('[AuthContext] initializeAuth - Token expirado o inválido, limpiando sesión');
           authService.clearLocalStorage();
           localStorage.removeItem('user_preferences');
           setUser(null);
           setIsAuthenticated(false);
           setPreferences(null);
         }
+      } else {
+        console.log('[AuthContext] initializeAuth - No token or userData, skipping');
       }
     } catch (error) {
-      console.error('Error inicializando autenticación:', error);
+      console.error('[AuthContext] initializeAuth - Error:', error);
       setUser(null);
       setIsAuthenticated(false);
       setPreferences(null);
     } finally {
       setIsLoading(false);
+      console.log('[AuthContext] initializeAuth - Loading finished');
     }
   };
 
   const login = async (email, password) => {
     try {
+      console.log('[AuthContext] login - Starting...');
       const response = await authService.login(email, password);
 
       const normalizedUser = normalizeUserData(response.user);
       setUser(normalizedUser);
       setIsAuthenticated(true);
+      console.log('[AuthContext] login - User set, calling loadUserPreferences...');
       // Cargar preferencias del usuario
       await loadUserPreferences();
+      console.log('[AuthContext] login - Completed');
 
       return response;
     } catch (error) {
-      console.error('Error en login:', error);
+      console.error('[AuthContext] login - Error:', error);
       throw error;
     }
   };

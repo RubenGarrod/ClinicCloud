@@ -142,6 +142,18 @@ const LoginModal = ({ isOpen, onClose }) => {
           errorMessage = t('auth.errors.emailExists', 'Este email ya está registrado');
         } else if (error.message.includes('Cuenta desactivada')) {
           errorMessage = t('auth.errors.accountDisabled', 'Cuenta desactivada');
+        } else if (error.message.includes('Name is required')) {
+          errorMessage = t('auth.errors.nameRequired', 'El nombre es requerido');
+        } else if (error.message.includes('Name must be at least 2 characters')) {
+          errorMessage = t('auth.errors.nameMinLength', 'El nombre debe tener al menos 2 caracteres');
+        } else if (error.message.includes('Name must not exceed 100 characters')) {
+          errorMessage = t('auth.errors.nameMaxLength', 'El nombre no puede exceder 100 caracteres');
+        } else if (error.message.includes('Name can only contain')) {
+          errorMessage = t('auth.errors.nameInvalidChars', 'El nombre solo puede contener letras, espacios, guiones y apóstrofes');
+        } else if (error.message.includes('Name must contain at least one letter')) {
+          errorMessage = t('auth.errors.nameMustHaveLetter', 'El nombre debe contener al menos una letra');
+        } else if (error.message.includes('Name cannot contain multiple consecutive spaces')) {
+          errorMessage = t('auth.errors.nameMultipleSpaces', 'El nombre no puede contener espacios múltiples consecutivos');
         } else {
           errorMessage = error.message;
         }
