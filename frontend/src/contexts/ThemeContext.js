@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
 
 const ThemeContext = createContext();
 
@@ -12,8 +11,6 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const { preferences } = useAuth();
-
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme || 'system';
@@ -23,19 +20,6 @@ export const ThemeProvider = ({ children }) => {
     const savedSize = localStorage.getItem('fontSize');
     return savedSize || 'normal';
   });
-
-  // Aplicar preferencias del usuario cuando se cargan desde AuthContext
-  useEffect(() => {
-    if (preferences) {
-      console.log('[ThemeContext] Applying preferences from AuthContext:', preferences);
-      if (preferences.theme) {
-        setTheme(preferences.theme);
-      }
-      if (preferences.fontSize) {
-        setFontSize(preferences.fontSize);
-      }
-    }
-  }, [preferences]);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const savedState = localStorage.getItem('sidebarCollapsed');

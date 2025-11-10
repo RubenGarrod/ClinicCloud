@@ -147,38 +147,35 @@ function AppContent() {
   };
 
   return (
-    <>
-      <PreferencesSyncBridge />
-      <Router>
-        <Layout>
-        <Routes>
-        <Route path="/" element={
-          <SearchPage
-            onSearch={handleSearch}
-            isLoading={isLoading}
-          />
-        } />
-        <Route path="/results" element={
-          <ResultsPage
-            query={searchQuery}
-            results={searchResults}
-            isLoading={isLoading}
-            onSearch={handleSearch}
-            onSelectDocument={setSelectedDocument}
-            selectedDocument={selectedDocument}
-            searchMetadata={searchMetadata}
-          />
-        } />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/favorites" element={<FavoritesPage />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        </Routes>
-        </Layout>
-      </Router>
-    </>
+    <Router>
+      <Layout>
+      <Routes>
+      <Route path="/" element={
+        <SearchPage
+          onSearch={handleSearch}
+          isLoading={isLoading}
+        />
+      } />
+      <Route path="/results" element={
+        <ResultsPage
+          query={searchQuery}
+          results={searchResults}
+          isLoading={isLoading}
+          onSearch={handleSearch}
+          onSelectDocument={setSelectedDocument}
+          selectedDocument={selectedDocument}
+          searchMetadata={searchMetadata}
+        />
+      } />
+      <Route path="/history" element={<HistoryPage />} />
+      <Route path="/favorites" element={<FavoritesPage />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      </Routes>
+      </Layout>
+    </Router>
   );
 }
 
@@ -188,6 +185,7 @@ function App() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
+            <PreferencesSyncBridge />
             <AppContent />
           </AuthProvider>
         </ToastProvider>
