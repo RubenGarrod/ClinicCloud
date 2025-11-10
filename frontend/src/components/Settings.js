@@ -19,9 +19,10 @@ const Settings = () => {
   // Valores por defecto
   const defaultPreferences = {
     preferredLanguage: 'es',
-    resultsPerPage: 20,
+    resultsPerPage: 25,
     defaultSort: 'relevance',
     fontSize: 'normal',
+    theme: 'system',
     saveSearchHistory: true,
     historyRetention: '6months',
     anonymousStats: true

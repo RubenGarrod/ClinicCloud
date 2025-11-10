@@ -739,7 +739,7 @@ async def change_password(
 # ENDPOINTS DE PREFERENCIAS DE USUARIO
 # ============================================
 
-@router.get("/preferences", response_model=UserPreferences)
+@router.get("/preferences", response_model=UserPreferences, response_model_by_alias=False)
 async def get_user_preferences(
     current_user: UserInDB = Depends(get_current_user)
 ):
@@ -788,7 +788,7 @@ async def get_user_preferences(
         )
 
 
-@router.patch("/preferences", response_model=UserPreferences)
+@router.patch("/preferences", response_model=UserPreferences, response_model_by_alias=False)
 async def update_user_preferences(
     preferences: UserPreferencesUpdate,
     current_user: UserInDB = Depends(get_current_user)

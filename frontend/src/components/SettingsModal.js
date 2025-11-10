@@ -70,8 +70,16 @@ const SettingsModal = ({ isOpen, onClose }) => {
         if (data.fontSize || data.font_size) {
           setFontSize(data.fontSize || data.font_size);
         }
+      } else if (response.status === 401) {
+        // Token expirado - cerrar modal silenciosamente
+        console.log('Token expirado al cargar preferencias, cerrando modal');
+        onClose();
       }
     } catch (error) {
+      // Si no hay token, ignorar el error silenciosamente
+      if (!authService.getToken()) {
+        return;
+      }
       console.error('Error loading preferences:', error);
     } finally {
       setIsLoading(false); // Ocultar indicador de carga
@@ -82,6 +90,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
   const savePreference = async (field, value) => {
     try {
       const token = authService.getToken();
+
+      // Si no hay token, el usuario no está autenticado - silenciosamente ignorar
+      if (!token) {
+        return;
+      }
+
       const payload = { [field]: value };
 
       console.log('Guardando preferencia:', field, '=', value); // Debug
@@ -96,6 +110,13 @@ const SettingsModal = ({ isOpen, onClose }) => {
       });
 
       if (!response.ok) {
+        // Si es 401, el token expiró - cerrar modal silenciosamente
+        if (response.status === 401) {
+          console.log('Token expirado, cerrando configuración');
+          onClose();
+          return;
+        }
+
         const data = await response.json();
         console.error('Error del servidor:', data); // Debug
         throw new Error(data.detail || 'Error al guardar preferencia');
@@ -104,6 +125,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
       const savedData = await response.json();
       console.log('Preferencia guardada exitosamente:', savedData); // Debug
     } catch (error) {
+      // Si el error es de red o el fetch falló, ignorar silenciosamente si no hay token
+      if (!authService.getToken()) {
+        return;
+      }
       console.error('Error saving preference:', error);
       setError(error.message || t('settings.saveError', 'Error al guardar preferencias'));
       setTimeout(() => setError(''), 3000);
