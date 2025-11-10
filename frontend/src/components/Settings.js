@@ -30,12 +30,12 @@ const Settings = () => {
 
   const [preferences, setPreferences] = useState(defaultPreferences);
 
-  // Cargar preferencias del backend al montar el componente
+  // Cargar preferencias del backend cuando el usuario inicia sesión
   useEffect(() => {
     const loadPreferences = async () => {
       try {
         const token = authService.getToken();
-        if (!token) return;
+        if (!token || !user) return;
 
         console.log('[Settings] Loading preferences from API...');
         const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/preferences`, {
@@ -55,7 +55,7 @@ const Settings = () => {
     };
 
     loadPreferences();
-  }, []); // Solo se ejecuta al montar el componente
+  }, [user]); // Se ejecuta cuando el usuario cambia (login/logout)
 
   const handleChange = (field, value) => {
     setPreferences(prev => ({
