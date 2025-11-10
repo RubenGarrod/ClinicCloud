@@ -10,6 +10,10 @@ const HelpModal = ({ isOpen, onClose }) => {
 
   const handleSectionClick = (index) => {
     switch(index) {
+      case 1: // FAQ
+        // TODO: Implementar modal de FAQ
+        alert(t('help.faqComingSoon', 'Las preguntas frecuentes se están recopilando de los mensajes de contacto. ¡Pronto disponible!'));
+        break;
       case 3: // Contact
         setIsContactModalOpen(true);
         break;
@@ -104,9 +108,12 @@ const HelpModal = ({ isOpen, onClose }) => {
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
             {t('help.footer')}{' '}
-            <a href="mailto:cliniccloud.contact@gmail.com" className="text-primary-600 dark:text-primary-400 hover:underline font-medium">
+            <button
+              onClick={() => setIsContactModalOpen(true)}
+              className="text-primary-600 dark:text-primary-400 hover:underline font-medium cursor-pointer bg-transparent border-none p-0"
+            >
               {t('help.contactUs')}
-            </a>
+            </button>
           </p>
         </div>
       </div>
