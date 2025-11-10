@@ -649,6 +649,7 @@
     "errorMessage": "Could not send the report. Please try again or contact directly at cliniccloud.contact@gmail.com",
     "titleRequired": "Title is required",
     "descriptionRequired": "Description is required",
+    "descriptionTooShort": "Description must be at least 10 characters",
     "invalidEmail": "Invalid email"
   }
 }

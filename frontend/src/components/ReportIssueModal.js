@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import authService from '../services/authService';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import { AlertCircle, Send, Mail, User } from 'lucide-react';
@@ -40,6 +41,8 @@ const ReportIssueModal = ({ isOpen, onClose }) => {
 
     if (!formData.description.trim()) {
       newErrors.description = t('reportIssue.descriptionRequired', 'La descripción es obligatoria');
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = t('reportIssue.descriptionTooShort', 'La descripción debe tener al menos 10 caracteres');
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -74,7 +77,7 @@ const ReportIssueModal = ({ isOpen, onClose }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(isAuthenticated ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` } : {})
+          ...(isAuthenticated ? authService.getAuthHeaders() : {})
         },
         body: JSON.stringify(requestData)
       });

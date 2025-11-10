@@ -29,18 +29,18 @@ const LoginModal = ({ isOpen, onClose }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Sanitize input based on field type
-    let sanitizedValue = value;
+    // No sanitizar mientras escribe, solo al validar/enviar
+    // Esto permite espacios, tildes y otros caracteres válidos
+    let processedValue = value;
     if (name === 'email') {
-      sanitizedValue = sanitizeInput(value).toLowerCase();
-    } else if (name === 'name') {
-      sanitizedValue = sanitizeInput(value);
+      // Solo convertir a minúsculas para email
+      processedValue = value.toLowerCase();
     }
-    // Password no se sanitiza (puede contener caracteres especiales)
+    // Nombre y contraseñas no se modifican mientras se escribe
 
     setFormData(prev => ({
       ...prev,
-      [name]: sanitizedValue
+      [name]: processedValue
     }));
     // Clear error when user starts typing
     if (errors[name]) {
@@ -100,18 +100,25 @@ const LoginModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
+
     try {
       let response;
-      
+
+      // Sanitizar antes de enviar al backend
+      const sanitizedData = {
+        email: sanitizeInput(formData.email).toLowerCase(),
+        password: formData.password, // Las contraseñas NO se sanitizan
+        name: isLogin ? undefined : sanitizeInput(formData.name)
+      };
+
       if (isLogin) {
-        response = await login(formData.email, formData.password);
+        response = await login(sanitizedData.email, sanitizedData.password);
       } else {
-        response = await register(formData.name, formData.email, formData.password);
+        response = await register(sanitizedData.name, sanitizedData.email, sanitizedData.password);
       }
       
       // Success - close modal

@@ -26,6 +26,7 @@ import i18n from './i18n';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import authService from './services/authService';
 import Layout from './components/layout/Layout';
 import SearchPage from './components/SearchPage';
 import ResultsPage from './components/ResultsPage';
@@ -97,13 +98,13 @@ function App() {
 
       // Guardar en el historial si el usuario está autenticado
       try {
-        const token = localStorage.getItem('auth_token');
+        const token = authService.getToken();
         if (token) {
           await fetch(`${API_BASE_URL}/api/history`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
+              ...authService.getAuthHeaders(),
             },
             body: JSON.stringify({
               query: query,
