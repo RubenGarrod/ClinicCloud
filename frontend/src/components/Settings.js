@@ -32,12 +32,8 @@ const Settings = () => {
 
   // Cargar preferencias del contexto cuando estén disponibles
   useEffect(() => {
-    console.log('[Settings] useEffect - contextPreferences changed:', contextPreferences);
     if (contextPreferences) {
-      console.log('[Settings] useEffect - Setting preferences from context');
       setPreferences(prev => ({ ...prev, ...contextPreferences }));
-    } else {
-      console.log('[Settings] useEffect - No contextPreferences available');
     }
   }, [contextPreferences]);
 

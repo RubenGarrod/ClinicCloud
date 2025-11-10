@@ -46,7 +46,6 @@ function PreferencesSyncBridge() {
 
   useEffect(() => {
     if (preferences) {
-      console.log('[App] Applying preferences to theme:', preferences);
       if (preferences.theme) {
         setTheme(preferences.theme);
       }
