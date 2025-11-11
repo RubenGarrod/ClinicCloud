@@ -7,6 +7,10 @@
 **Copyright (C) 2025 Rubén García Rodríguez**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![GitHub release](https://img.shields.io/github/v/release/RubenGarrod/cliniccloud)](https://github.com/RubenGarrod/cliniccloud/releases)
+[![GitHub Release Date](https://img.shields.io/github/release-date/RubenGarrod/cliniccloud)](https://github.com/RubenGarrod/cliniccloud/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/RubenGarrod/cliniccloud)](https://github.com/RubenGarrod/cliniccloud/commits)
+
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
 [![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.101.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
