@@ -9,7 +9,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
 [![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.101-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.101.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql)](https://github.com/pgvector/pgvector)
 
 **🇬🇧 English** | **[🇪🇸 Español](README_ES.md)**
@@ -150,10 +150,11 @@ ClinicCloud is built with a **decoupled microservices architecture** that commun
 |---------|-----------|------|-------------|
 | **frontend** | React 19 + Nginx | 80 | User web interface |
 | **api** | FastAPI + Uvicorn | 8000 | Main REST API |
-| **motor_busqueda** | FastAPI + Sentence Transformers | 8001 | Semantic search engine |
+| **search-engine** | FastAPI + Sentence Transformers | 8001 | Semantic search engine |
 | **db** | PostgreSQL + pgvector | 5432 | Vector database |
-| **scraper** | Scrapy + Transformers | - | Data extraction and processing |
-| **adminer** | Adminer | 8080 | Database administrator |
+| **redis** | Redis 7 Alpine | 6379 | Cache and rate limiting |
+| **scraper** | Scrapy + Transformers | - | Data extraction and processing (continuous mode) |
+| **portainer** | Portainer CE | 9443/9000 | Container management UI |
 
 ---
 
@@ -162,29 +163,41 @@ ClinicCloud is built with a **decoupled microservices architecture** that commun
 ### Backend
 
 **Main API:**
-- **FastAPI 0.101** - Modern and fast web framework
-- **Uvicorn** - High-performance ASGI server
-- **Pydantic 2.1** - Data validation with types
-- **PyJWT 2.8** - JWT authentication
-- **bcrypt 4.0** - Secure password hashing
-- **psycopg2** - PostgreSQL client
+- **FastAPI 0.101.0** - Modern and fast web framework
+- **Uvicorn 0.23.2** - High-performance ASGI server
+- **Pydantic 2.1.1** - Data validation with types
+- **PyJWT 2.8.0** - JWT authentication
+- **bcrypt 4.0.1** - Secure password hashing
+- **psycopg2-binary 2.9.7** - PostgreSQL client
+- **asyncpg 0.29.0** - Async PostgreSQL driver
+- **psycopg2-pool 1.1** - Connection pooling
 - **httpx** - Asynchronous HTTP client
-- **email-validator** - Email validation
+- **email-validator 2.1.0** - Email validation
+- **redis 4.6.0** - Redis client for caching
+- **fastapi-limiter 0.1.5** - Rate limiting middleware
 
 **Search Engine:**
-- **Sentence Transformers 2.2** - Embedding generation
-  - Model: `paraphrase-multilingual-MiniLM-L12-v2`
-  - Dimension: 768
-- **NumPy 1.25** - Vector operations
+- **Sentence Transformers 2.2.2** - Embedding generation
+  - Model: `pritamdeka/S-PubMedBert-MS-MARCO`
+  - Specialized BioBERT fine-tuned on MS-MARCO for medical semantic search
+  - Dimension: 768 (native, no padding required)
+  - Optimized for medical terminology and scientific literature
+- **NumPy 1.25.2** - Vector operations
+- **psycopg2-binary 2.9.7** - PostgreSQL client
+- **Pydantic 2.1.1 + pydantic-settings 2.0.3** - Configuration management
 
 **Scraper:**
-- **Scrapy** - Web scraping framework
-- **Transformers** - NLP models for categorization
+- **Scrapy 2.12.0** - Web scraping framework
+- **Transformers 4.30.2** - NLP models for categorization
+- **Sentence Transformers 2.2.2** - Medical embedding generation (S-PubMedBert-MS-MARCO)
+- **SQLAlchemy 2.0.21** - ORM for database operations
+- **schedule 1.2.0** - Continuous scraping scheduler
+- **torch** - PyTorch for model inference
 
 ### Frontend
 
 - **React 19.1** - Modern UI library
-- **React Router 7.5** - SPA navigation
+- **React Router 7.5.3** - SPA navigation
 - **i18next 25.1** - Internationalization
   - `react-i18next` - React integration
   - `i18next-http-backend` - Translation loading
@@ -198,10 +211,18 @@ ClinicCloud is built with a **decoupled microservices architecture** that commun
 
 ### Database
 
-- **PostgreSQL** (ankane/pgvector image)
+- **PostgreSQL 16** (pgvector/pgvector:pg16 image)
 - **pgvector** - Vector search extension
-  - Cosine similarity operations support
-  - Optimized IVFFlat indexes
+  - Cosine similarity and inner product operations support
+  - Optimized IVFFlat indexes for 768-dimensional vectors
+  - Supports vector operations: `<=>` (cosine distance), `<#>` (inner product)
+
+### Cache & Performance
+
+- **Redis 7 Alpine** - In-memory data store
+  - Rate limiting for API endpoints
+  - Session caching
+  - Query result caching
 
 ### Infrastructure
 
@@ -252,11 +273,16 @@ The project works with default values, but you can customize the configuration b
 # ============================================
 # DATABASE CONFIGURATION
 # ============================================
-PG_HOST=db
-PG_PORT=5432
-PG_DATABASE=cliniccloud
-PG_USER=admin
-PG_PASSWORD=admin123
+POSTGRES_USER=cliniccloud
+POSTGRES_PASSWORD=your_secure_password_here
+POSTGRES_DB=cliniccloud
+
+# Database connection (uses POSTGRES_* vars by default)
+DB_HOST=db
+DB_PORT=5432
+DB_NAME=cliniccloud
+DB_USER=cliniccloud
+DB_PASSWORD=your_secure_password_here
 
 # ============================================
 # TRANSLATION CONFIGURATION (Azure Translator)
@@ -280,15 +306,41 @@ SMTP_FROM_NAME=ClinicCloud
 # ============================================
 # APPLICATION CONFIGURATION
 # ============================================
-APP_URL=http://localhost:3000
+APP_URL=http://localhost
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# ============================================
+# JWT SECURITY
+# ============================================
+JWT_SECRET=your_secret_key_here_min_32_chars
+JWT_EXPIRE_HOURS=24
+JWT_ALGORITHM=HS256
+BCRYPT_ROUNDS=12
+
+# ============================================
+# REDIS CONFIGURATION
+# ============================================
+REDIS_URL=redis://redis:6379
+REDIS_PASSWORD=
+RATE_LIMIT_ENABLED=true
 
 # ============================================
 # SEARCH ENGINE CONFIGURATION
 # ============================================
-EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+MODEL_NAME=pritamdeka/S-PubMedBert-MS-MARCO
 EMBEDDING_DIMENSION=768
-SIMILARITY_THRESHOLD=0.5
-MAX_SEARCH_RESULTS=20
+MAX_QUERY_LENGTH=512
+
+# ============================================
+# SCRAPER CONTINUOUS MODE CONFIGURATION
+# ============================================
+SCRAPER_MAX_DOCS=1000
+SCRAPER_BATCH_SIZE=25
+SCRAPER_START_HOUR=0
+SCRAPER_STOP_HOUR=23
+SCRAPER_LOOP_DELAY=1800
 ```
 
 ### 3. Start the Services
@@ -314,13 +366,14 @@ docker-compose ps
 You should see all services as `Up` (running):
 
 ```
-NAME                        STATUS
-cliniccloud_api             Up
-cliniccloud_db              Up
-cliniccloud_frontend        Up
-cliniccloud_motor_busqueda  Up
-cliniccloud_scraper         Up
-cliniccloud_adminer         Up
+NAME                           STATUS
+cliniccloud-api                Up
+cliniccloud-db                 Up
+cliniccloud-frontend           Up
+cliniccloud-search-engine      Up
+cliniccloud-redis              Up
+cliniccloud-scraper            Up
+cliniccloud-portainer          Up
 ```
 
 ### 5. Check Logs (Optional)
@@ -331,7 +384,7 @@ docker-compose logs -f
 
 # Logs of a specific service
 docker-compose logs -f api
-docker-compose logs -f motor_busqueda
+docker-compose logs -f search-engine
 ```
 
 ---
@@ -406,19 +459,32 @@ Once all services are running:
 | **Web Application** | http://localhost:80 | Main user interface |
 | **REST API** | http://localhost:8000 | API endpoints |
 | **API Docs** | http://localhost:8000/docs | Interactive Swagger documentation |
+| **API Health** | http://localhost:8000/api/health | Health check endpoint |
 | **Search Engine** | http://localhost:8001 | Search engine API |
-| **Adminer** | http://localhost:8080 | Database manager |
+| **Search Health** | http://localhost:8001/health | Search engine health check |
+| **Portainer** | http://localhost:9000 or https://localhost:9443 | Container management UI |
 
-### Adminer Credentials
+### Database Access
 
-To access the database via Adminer:
+To access the PostgreSQL database directly:
 
+**Using psql:**
+```bash
+docker-compose exec db psql -U cliniccloud -d cliniccloud
 ```
-System:      PostgreSQL
-Server:      db
-Username:    admin
-Password:    admin123
+
+**Using Portainer:**
+1. Navigate to http://localhost:9000
+2. Create an admin account on first access
+3. Connect to the local Docker environment
+4. Manage containers, view logs, and access console
+
+**Default credentials:**
+```
+Username:    cliniccloud (configurable via POSTGRES_USER)
+Password:    set via POSTGRES_PASSWORD in .env
 Database:    cliniccloud
+Host:        db (internal) or localhost:5432 (external)
 ```
 
 ### Main Functionalities
@@ -752,11 +818,22 @@ Access complete Swagger documentation at:
 
 **Table `documento`:**
 - Stores indexed medical documents
-- Includes 768-dimensional vector embeddings
-- Optimized indexes for semantic search
+- Includes 768-dimensional vector embeddings (S-PubMedBert-MS-MARCO model)
+- Optimized IVFFlat indexes for semantic search
+- New metadata fields (migration 006):
+  - `mesh_terms`: Medical Subject Headings (official NLM categorization)
+  - `journal`: Publication journal name
+  - `doi`: Digital Object Identifier
+  - `publication_types`: Publication type classifications
+  - `language`: Document language (ISO 639-2)
+
+**Table `resumen`:**
+- Auto-generated summaries for documents
+- Created by BART summarization model
+- One-to-one relationship with documents
 
 **Table `categoria`:**
-- 25 predefined medical specialties
+- 25+ predefined medical specialties
 - 1:N relationship with documents
 
 **Table `search_history`:**
@@ -792,26 +869,34 @@ Access complete Swagger documentation at:
 
 **Database backup:**
 ```bash
-docker-compose exec db pg_dump -U admin cliniccloud > backup.sql
+docker-compose exec db pg_dump -U cliniccloud cliniccloud > backup.sql
 ```
 
 **Restore backup:**
 ```bash
-docker-compose exec -T db psql -U admin cliniccloud < backup.sql
+docker-compose exec -T db psql -U cliniccloud cliniccloud < backup.sql
 ```
 
 **Check DB health:**
 ```bash
-docker-compose exec db psql -U admin -d cliniccloud -c "
+docker-compose exec db psql -U cliniccloud -d cliniccloud -c "
 SELECT COUNT(*) FROM documento;
 SELECT COUNT(*) FROM auth.users;
 SELECT COUNT(*) FROM favorites;
+SELECT COUNT(*) FROM resumen;
+"
+```
+
+**Check vectorized documents:**
+```bash
+docker-compose exec db psql -U cliniccloud -d cliniccloud -c "
+SELECT COUNT(*) FROM documento WHERE contenido_vectorizado IS NOT NULL;
 "
 ```
 
 **Clean expired tokens:**
 ```bash
-docker-compose exec db psql -U admin -d cliniccloud -c "
+docker-compose exec db psql -U cliniccloud -d cliniccloud -c "
 SELECT auth.cleanup_expired_tokens();
 "
 ```
@@ -865,7 +950,7 @@ docker-compose logs -f
 docker-compose logs -f api
 
 # View last 100 lines
-docker-compose logs --tail=100 motor_busqueda
+docker-compose logs --tail=100 search-engine
 ```
 
 ### Specific Rebuilding
@@ -903,14 +988,14 @@ LOG_LEVEL=DEBUG
 
 **Symptoms:**
 ```
-cliniccloud_db exited with code 1
+cliniccloud-db exited with code 1
 ```
 
 **Solution:**
 ```bash
 # Remove volumes and restart
 docker-compose down
-docker volume rm cliniccloud_pgdata
+docker volume rm cliniccloud_postgres-data
 docker-compose up -d
 ```
 
@@ -943,18 +1028,24 @@ docker-compose exec scraper curl -I https://pubmed.ncbi.nlm.nih.gov
 
 **Solution:**
 ```bash
-# 1. Verify documents
-docker-compose exec db psql -U admin -d cliniccloud -c "
+# 1. Verify documents and embeddings
+docker-compose exec db psql -U cliniccloud -d cliniccloud -c "
 SELECT COUNT(*) FROM documento WHERE contenido_vectorizado IS NOT NULL;
 "
 
-# 2. Check search engine
-docker-compose logs motor_busqueda
+# 2. Check search engine logs
+docker-compose logs search-engine
 
-# 3. Temporarily reduce threshold in .env
-SIMILARITY_THRESHOLD=0.3
-docker-compose restart motor_busqueda
+# 3. Verify model is loaded correctly
+docker-compose logs search-engine | grep "S-PubMedBert-MS-MARCO"
+
+# 4. Check if vector extension is enabled
+docker-compose exec db psql -U cliniccloud -d cliniccloud -c "
+SELECT * FROM pg_extension WHERE extname = 'vector';
+"
 ```
+
+**Note:** The search engine now uses ranking by relevance instead of filtering by threshold, so all documents are returned sorted by similarity score.
 
 ### Issue: Frontend Doesn't Connect to API
 
@@ -966,14 +1057,19 @@ Network Error / CORS Error
 **Solution:**
 ```bash
 # Verify API is running
-curl http://localhost:8000/health
+curl http://localhost:8000/api/health
 
-# Check CORS configuration in api/main.py
-# Must include http://localhost:3000 in allowed_origins
+# Check CORS configuration
+docker-compose logs api | grep CORS
+
+# Verify CORS_ORIGINS environment variable
+docker-compose exec api printenv | grep CORS
 
 # Restart services
 docker-compose restart api frontend
 ```
+
+**Note:** For production, frontend runs on port 80. For development with `npm start`, it runs on port 3000.
 
 ### Issue: Email Not Sending
 
@@ -1152,8 +1248,10 @@ When using, modifying, or distributing this software, you **MUST**:
 - Authors: Freepik, Smashicons, and others
 
 **Machine Learning Models:**
-- `paraphrase-multilingual-MiniLM-L12-v2` from Sentence Transformers
-- License: Apache 2.0
+- `pritamdeka/S-PubMedBert-MS-MARCO` - Medical semantic search model
+  - BioBERT fine-tuned on MS-MARCO dataset
+  - License: Apache 2.0
+  - Model card: https://huggingface.co/pritamdeka/S-PubMedBert-MS-MARCO
 
 See the [LICENSE](LICENSE) file for the complete license text and [NOTICE](NOTICE) for detailed attributions.
 
