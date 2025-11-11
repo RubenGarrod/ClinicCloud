@@ -16,8 +16,7 @@ const HelpModal = ({ isOpen, onClose }) => {
         setIsGettingStartedModalOpen(true);
         break;
       case 1: // FAQ
-        // TODO: Implementar modal de FAQ
-        alert(t('help.faqComingSoon', 'Las preguntas frecuentes se están recopilando de los mensajes de contacto. ¡Pronto disponible!'));
+        alert(t('help.faqComingSoon'));
         break;
       case 2: // Documentation
         setIsDocumentationModalOpen(true);
@@ -124,7 +123,7 @@ const HelpModal = ({ isOpen, onClose }) => {
                   {t('help.gettingStarted')}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {t('help.gettingStartedSubtitle', 'Guía rápida para usar ClinicCloud')}
+                  {t('help.gettingStartedSubtitle')}
                 </p>
               </div>
             </div>
@@ -135,15 +134,15 @@ const HelpModal = ({ isOpen, onClose }) => {
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                   <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm mr-3">1</span>
-                  {t('guide.searchTitle', 'Realizar una búsqueda')}
+                  {t('guide.searchTitle')}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  {t('guide.searchDesc', 'Ingresa términos médicos en español o inglés en la barra de búsqueda. El sistema utiliza búsqueda semántica para encontrar los documentos más relevantes.')}
+                  {t('guide.searchDesc')}
                 </p>
                 <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
-                  <li>{t('guide.searchTip1', 'Puedes buscar síntomas, enfermedades, tratamientos, etc.')}</li>
-                  <li>{t('guide.searchTip2', 'No necesitas usar términos exactos, la búsqueda es inteligente')}</li>
-                  <li>{t('guide.searchTip3', 'Los resultados se ordenan por relevancia automáticamente')}</li>
+                  <li>{t('guide.searchTip1')}</li>
+                  <li>{t('guide.searchTip2')}</li>
+                  <li>{t('guide.searchTip3')}</li>
                 </ul>
               </div>
 
@@ -151,15 +150,15 @@ const HelpModal = ({ isOpen, onClose }) => {
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                   <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm mr-3">2</span>
-                  {t('guide.filtersTitle', 'Filtrar y ordenar resultados')}
+                  {t('guide.filtersTitle')}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  {t('guide.filtersDesc', 'Refina tus resultados usando los filtros disponibles en la página de resultados:')}
+                  {t('guide.filtersDesc')}
                 </p>
                 <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
-                  <li>{t('guide.filtersTip1', 'Filtra por categoría médica (cardiología, neurología, etc.)')}</li>
-                  <li>{t('guide.filtersTip2', 'Ordena por relevancia, fecha o autor')}</li>
-                  <li>{t('guide.filtersTip3', 'Ajusta el número de resultados por página')}</li>
+                  <li>{t('guide.filtersTip1')}</li>
+                  <li>{t('guide.filtersTip2')}</li>
+                  <li>{t('guide.filtersTip3')}</li>
                 </ul>
               </div>
 
@@ -167,15 +166,15 @@ const HelpModal = ({ isOpen, onClose }) => {
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                   <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm mr-3">3</span>
-                  {t('guide.favoritesTitle', 'Guardar documentos favoritos')}
+                  {t('guide.favoritesTitle')}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  {t('guide.favoritesDesc', 'Guarda los documentos más importantes para acceder a ellos rápidamente:')}
+                  {t('guide.favoritesDesc')}
                 </p>
                 <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
-                  <li>{t('guide.favoritesTip1', 'Haz clic en el icono de estrella para agregar a favoritos')}</li>
-                  <li>{t('guide.favoritesTip2', 'Accede a tus favoritos desde el menú lateral')}</li>
-                  <li>{t('guide.favoritesTip3', 'Requiere iniciar sesión para usar esta función')}</li>
+                  <li>{t('guide.favoritesTip1')}</li>
+                  <li>{t('guide.favoritesTip2')}</li>
+                  <li>{t('guide.favoritesTip3')}</li>
                 </ul>
               </div>
 
@@ -183,15 +182,15 @@ const HelpModal = ({ isOpen, onClose }) => {
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                   <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm mr-3">4</span>
-                  {t('guide.historyTitle', 'Consultar historial de búsquedas')}
+                  {t('guide.historyTitle')}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  {t('guide.historyDesc', 'Revisa tus búsquedas anteriores y vuelve a ejecutarlas fácilmente:')}
+                  {t('guide.historyDesc')}
                 </p>
                 <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
-                  <li>{t('guide.historyTip1', 'El historial guarda automáticamente tus búsquedas')}</li>
-                  <li>{t('guide.historyTip2', 'Haz clic en cualquier búsqueda para repetirla')}</li>
-                  <li>{t('guide.historyTip3', 'Configura el tiempo de retención en ajustes')}</li>
+                  <li>{t('guide.historyTip1')}</li>
+                  <li>{t('guide.historyTip2')}</li>
+                  <li>{t('guide.historyTip3')}</li>
                 </ul>
               </div>
 
@@ -199,15 +198,15 @@ const HelpModal = ({ isOpen, onClose }) => {
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                   <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm mr-3">5</span>
-                  {t('guide.settingsTitle', 'Personalizar preferencias')}
+                  {t('guide.settingsTitle')}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  {t('guide.settingsDesc', 'Ajusta la aplicación a tus necesidades desde el panel de configuración:')}
+                  {t('guide.settingsDesc')}
                 </p>
                 <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
-                  <li>{t('guide.settingsTip1', 'Cambia el idioma de la interfaz (español/inglés)')}</li>
-                  <li>{t('guide.settingsTip2', 'Selecciona tema claro, oscuro o automático')}</li>
-                  <li>{t('guide.settingsTip3', 'Ajusta el tamaño de fuente para mejor legibilidad')}</li>
+                  <li>{t('guide.settingsTip1')}</li>
+                  <li>{t('guide.settingsTip2')}</li>
+                  <li>{t('guide.settingsTip3')}</li>
                 </ul>
               </div>
             </div>
@@ -239,17 +238,17 @@ const HelpModal = ({ isOpen, onClose }) => {
                     {t('help.documentation')}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('help.documentationSubtitle', 'Documentación completa del proyecto')}
+                    {t('help.documentationSubtitle')}
                   </p>
                 </div>
               </div>
               <a
-                href="https://github.com/Reub26/ClinicCloud#readme"
+                href="https://github.com/RubenGarrod/ClinicCloud#readme"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-primary-600 dark:text-primary-400 hover:underline"
               >
-                <span className="text-sm font-medium">{t('help.openInGitHub', 'Abrir en GitHub')}</span>
+                <span className="text-sm font-medium">{t('help.openInGitHub')}</span>
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
@@ -257,7 +256,7 @@ const HelpModal = ({ isOpen, onClose }) => {
             {/* Iframe con README */}
             <div className="w-full h-[70vh] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               <iframe
-                src="https://github.com/Reub26/ClinicCloud/blob/main/README.md"
+                src="https://github.com/RubenGarrod/ClinicCloud/blob/main/README.md"
                 className="w-full h-full"
                 title="Documentation"
                 sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
@@ -267,7 +266,7 @@ const HelpModal = ({ isOpen, onClose }) => {
             {/* Info note */}
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-300">
-                {t('help.documentationNote', 'Si tienes problemas visualizando la documentación aquí, puedes abrirla directamente en GitHub usando el enlace de arriba.')}
+                {t('help.documentationNote')}
               </p>
             </div>
           </div>
