@@ -31,7 +31,9 @@ const HelpModal = ({ isOpen, onClose }) => {
         const html = marked.parse(markdown);
         const sanitizedHtml = DOMPurify.sanitize(html);
 
-        setReadmeContent(sanitizedHtml);
+        // Post-process HTML to fix relative URLs
+        const processedHtml = processReadmeHtml(sanitizedHtml);
+        setReadmeContent(processedHtml);
       } catch (error) {
         console.error('Error fetching README:', error);
         setReadmeError(true);
@@ -42,6 +44,50 @@ const HelpModal = ({ isOpen, onClose }) => {
 
     fetchReadme();
   }, [isDocumentationModalOpen]);
+
+  // Process README HTML to fix relative URLs and links
+  const processReadmeHtml = (html) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const baseUrl = 'https://github.com/RubenGarrod/ClinicCloud/blob/main/';
+    const rawBaseUrl = 'https://raw.githubusercontent.com/RubenGarrod/ClinicCloud/main/';
+
+    // Fix image URLs
+    doc.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('http')) {
+        // Use raw URL for images
+        img.setAttribute('src', rawBaseUrl + src.replace(/^\.\//, ''));
+      }
+    });
+
+    // Fix links
+    doc.querySelectorAll('a').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href) {
+        // If it's a relative link to another file in the repo
+        if (!href.startsWith('http') && !href.startsWith('#')) {
+          link.setAttribute('href', baseUrl + href.replace(/^\.\//, ''));
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+        }
+        // If it's an anchor link (same page), remove it or make it inert
+        else if (href.startsWith('#')) {
+          // Remove the link functionality for anchor links since they won't work in our context
+          link.removeAttribute('href');
+          link.style.cursor = 'default';
+          link.style.textDecoration = 'none';
+        }
+        // External links - ensure they open in new tab
+        else if (href.startsWith('http')) {
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+        }
+      }
+    });
+
+    return doc.body.innerHTML;
+  };
 
   const handleSectionClick = (index) => {
     switch(index) {
