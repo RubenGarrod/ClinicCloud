@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HelpCircle, Book, MessageCircle, FileText, Mail, ExternalLink } from 'lucide-react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import Modal from './ui/Modal';
 import ContactModal from './ContactModal';
 
@@ -9,6 +11,37 @@ const HelpModal = ({ isOpen, onClose }) => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isDocumentationModalOpen, setIsDocumentationModalOpen] = useState(false);
   const [isGettingStartedModalOpen, setIsGettingStartedModalOpen] = useState(false);
+  const [readmeContent, setReadmeContent] = useState('');
+  const [readmeLoading, setReadmeLoading] = useState(false);
+  const [readmeError, setReadmeError] = useState(false);
+
+  // Fetch README when documentation modal opens
+  useEffect(() => {
+    const fetchReadme = async () => {
+      if (!isDocumentationModalOpen) return;
+
+      setReadmeLoading(true);
+      setReadmeError(false);
+
+      try {
+        const response = await fetch('https://raw.githubusercontent.com/RubenGarrod/ClinicCloud/main/README.md');
+        if (!response.ok) throw new Error('Failed to fetch README');
+
+        const markdown = await response.text();
+        const html = marked.parse(markdown);
+        const sanitizedHtml = DOMPurify.sanitize(html);
+
+        setReadmeContent(sanitizedHtml);
+      } catch (error) {
+        console.error('Error fetching README:', error);
+        setReadmeError(true);
+      } finally {
+        setReadmeLoading(false);
+      }
+    };
+
+    fetchReadme();
+  }, [isDocumentationModalOpen]);
 
   const handleSectionClick = (index) => {
     switch(index) {
@@ -253,21 +286,45 @@ const HelpModal = ({ isOpen, onClose }) => {
               </a>
             </div>
 
-            {/* Iframe con README */}
-            <div className="w-full h-[70vh] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <iframe
-                src="https://github.com/RubenGarrod/ClinicCloud/blob/main/README.md"
-                className="w-full h-full"
-                title="Documentation"
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-              />
-            </div>
+            {/* README Content */}
+            <div className="w-full h-[70vh] border border-gray-200 dark:border-gray-700 rounded-lg overflow-y-auto bg-white dark:bg-gray-900 p-6">
+              {readmeLoading && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">{t('help.loadingDocumentation')}</p>
+                  </div>
+                </div>
+              )}
 
-            {/* Info note */}
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                {t('help.documentationNote')}
-              </p>
+              {readmeError && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <p className="text-red-600 dark:text-red-400 mb-4">{t('help.documentationError')}</p>
+                    <a
+                      href="https://github.com/RubenGarrod/ClinicCloud#readme"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 dark:text-primary-400 hover:underline"
+                    >
+                      {t('help.viewOnGitHub')}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {!readmeLoading && !readmeError && readmeContent && (
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none
+                    prose-headings:text-gray-900 dark:prose-headings:text-white
+                    prose-p:text-gray-700 dark:prose-p:text-gray-300
+                    prose-a:text-primary-600 dark:prose-a:text-primary-400
+                    prose-strong:text-gray-900 dark:prose-strong:text-white
+                    prose-code:text-primary-600 dark:prose-code:text-primary-400
+                    prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800"
+                  dangerouslySetInnerHTML={{ __html: readmeContent }}
+                />
+              )}
             </div>
           </div>
         </Modal>
