@@ -8,7 +8,7 @@ import authService from '../services/authService';
 
 const Settings = () => {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, preferences: contextPreferences, updatePreferences } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,45 +16,26 @@ const Settings = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const [preferences, setPreferences] = useState({
-    // Preferencias de búsqueda
+  // Valores por defecto
+  const defaultPreferences = {
     preferredLanguage: 'es',
-    resultsPerPage: 20,
+    resultsPerPage: 25,
     defaultSort: 'relevance',
-
-    // Preferencias de visualización
     fontSize: 'normal',
-
-    // Privacidad
+    theme: 'system',
     saveSearchHistory: true,
     historyRetention: '6months',
     anonymousStats: true
-  });
+  };
 
-  // Cargar preferencias del usuario
+  const [preferences, setPreferences] = useState(defaultPreferences);
+
+  // Cargar preferencias del contexto cuando estén disponibles
   useEffect(() => {
-    const loadPreferences = async () => {
-      try {
-        const token = authService.getToken();
-        if (!token) return;
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/preferences`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setPreferences(prev => ({ ...prev, ...data }));
-        }
-      } catch (error) {
-        console.error('Error loading preferences:', error);
-      }
-    };
-
-    loadPreferences();
-  }, []);
+    if (contextPreferences) {
+      setPreferences(prev => ({ ...prev, ...contextPreferences }));
+    }
+  }, [contextPreferences]);
 
   const handleChange = (field, value) => {
     setPreferences(prev => ({
@@ -86,6 +67,9 @@ const Settings = () => {
         const data = await response.json();
         throw new Error(data.detail || 'Error al guardar preferencias');
       }
+
+      // Actualizar preferencias en el contexto
+      updatePreferences(preferences);
 
       setSuccess(t('settings.saveSuccess', 'Preferencias guardadas correctamente'));
       setHasChanges(false);

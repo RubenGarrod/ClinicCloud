@@ -342,6 +342,131 @@ Descripción:
 
         return self._send_email(to_email, subject, html_body, text_body)
 
+    def send_contact_message(
+        self,
+        subject: str,
+        message: str,
+        email: str,
+        name: str,
+        user_id: Optional[int] = None
+    ) -> bool:
+        """
+        Envía un mensaje de contacto a cliniccloud.contact@gmail.com.
+
+        Args:
+            subject: Asunto del mensaje
+            message: Cuerpo del mensaje
+            email: Email del remitente
+            name: Nombre del remitente
+            user_id: ID del usuario (si está autenticado)
+
+        Returns:
+            bool: True si se envió correctamente
+        """
+        to_email = "cliniccloud.contact@gmail.com"
+        email_subject = f"CONTACTO: {subject}"
+
+        # Construir información del usuario
+        user_info = "<div style='margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #667eea; border-radius: 4px;'>"
+        user_info += "<p style='margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #333;'>Información del remitente:</p>"
+        user_info += f"<p style='margin: 5px 0; font-size: 14px; color: #666;'><strong>Nombre:</strong> {name}</p>"
+        user_info += f"<p style='margin: 5px 0; font-size: 14px; color: #666;'><strong>Email:</strong> {email}</p>"
+        if user_id:
+            user_info += f"<p style='margin: 5px 0; font-size: 14px; color: #666;'><strong>User ID:</strong> {user_id}</p>"
+        user_info += "</div>"
+
+        # Cuerpo en texto plano (fallback)
+        text_body = f"""
+MENSAJE DE CONTACTO
+
+Asunto: {subject}
+
+De: {name} ({email})
+"""
+        if user_id:
+            text_body += f"User ID: {user_id}\n"
+
+        text_body += f"""
+Mensaje:
+{message}
+
+---
+"""
+
+        # Cuerpo en HTML
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensaje de Contacto</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+        <tr>
+            <td align="center">
+                <!-- Contenedor principal -->
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
+                                📧 Mensaje de Contacto
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Contenido -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <!-- Información del remitente -->
+                            {user_info}
+
+                            <!-- Asunto -->
+                            <div style="margin: 20px 0;">
+                                <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: 600; color: #333;">
+                                    {subject}
+                                </h2>
+                            </div>
+
+                            <!-- Mensaje -->
+                            <div style="margin: 20px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+                                <p style="margin: 0; font-size: 14px; color: #666; white-space: pre-wrap; line-height: 1.6;">
+                                    {message}
+                                </p>
+                            </div>
+
+                            <!-- Responder -->
+                            <div style="margin: 30px 0; padding: 20px; background-color: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">
+                                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #1976d2;">
+                                    Responder a:
+                                </p>
+                                <p style="margin: 0; font-size: 14px;">
+                                    <a href="mailto:{email}" style="color: #2196f3; text-decoration: none;">{email}</a>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 40px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px;">
+                            <p style="margin: 10px 0 0 0; font-size: 12px; color: #999999;">
+                                © 2025 ClinicCloud. Todos los derechos reservados.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+        """
+
+        return self._send_email(to_email, email_subject, html_body, text_body)
+
 
 # Instancia singleton del servicio
 email_service = EmailService()

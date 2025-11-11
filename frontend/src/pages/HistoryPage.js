@@ -229,7 +229,7 @@ const HistoryPage = () => {
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                     <span className="flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
-                      {formatDate(item.searched_at)}
+                      {formatDate(item.created_at)}
                     </span>
 
                     {item.results_count !== undefined && item.results_count !== null && (

@@ -25,7 +25,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from urllib.parse import urlparse
 
-from app.api.endpoints import search, documents, categories, translate, favorites, history, report_issue, health
+from app.api.endpoints import search, documents, categories, translate, favorites, history, report_issue, contact, health
 from app.api.endpoints.auth import login, password_reset
 from app.core.rate_limiter import RATE_LIMIT_ENABLED, REDIS_URL
 from app.middleware.logging_middleware import RequestLoggingMiddleware
@@ -180,6 +180,7 @@ app.include_router(translate.router, prefix="/api/translate", tags=["translate"]
 app.include_router(favorites.router, prefix="/api/favorites", tags=["favorites"])
 app.include_router(history.router, prefix="/api", tags=["history"])
 app.include_router(report_issue.router, prefix="/api", tags=["support"])
+app.include_router(contact.router, prefix="/api", tags=["support"])
 
 @app.get("/")
 def read_root():

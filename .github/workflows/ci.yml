@@ -227,6 +227,7 @@ jobs:
   # Integration Tests (Full Stack)
   # ===============================================
   integration-tests:
+    if: false  # Disabled: GitHub runners lack disk space for ML dependencies (~14GB required)
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests]
 

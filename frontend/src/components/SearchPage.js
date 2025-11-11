@@ -33,8 +33,8 @@ const SearchPage = ({ onSearch, isLoading }) => {
   };
 
   const handleQueryChange = (e) => {
-    const sanitizedValue = sanitizeInput(e.target.value);
-    setQuery(sanitizedValue);
+    // No sanitizar mientras escribe, solo al enviar
+    setQuery(e.target.value);
   };
 
   return (

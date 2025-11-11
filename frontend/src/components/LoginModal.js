@@ -29,18 +29,18 @@ const LoginModal = ({ isOpen, onClose }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Sanitize input based on field type
-    let sanitizedValue = value;
+    // No sanitizar mientras escribe, solo al validar/enviar
+    // Esto permite espacios, tildes y otros caracteres válidos
+    let processedValue = value;
     if (name === 'email') {
-      sanitizedValue = sanitizeInput(value).toLowerCase();
-    } else if (name === 'name') {
-      sanitizedValue = sanitizeInput(value);
+      // Solo convertir a minúsculas para email
+      processedValue = value.toLowerCase();
     }
-    // Password no se sanitiza (puede contener caracteres especiales)
+    // Nombre y contraseñas no se modifican mientras se escribe
 
     setFormData(prev => ({
       ...prev,
-      [name]: sanitizedValue
+      [name]: processedValue
     }));
     // Clear error when user starts typing
     if (errors[name]) {
@@ -100,18 +100,25 @@ const LoginModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
+
     try {
       let response;
-      
+
+      // Sanitizar antes de enviar al backend
+      const sanitizedData = {
+        email: sanitizeInput(formData.email).toLowerCase(),
+        password: formData.password, // Las contraseñas NO se sanitizan
+        name: isLogin ? undefined : sanitizeInput(formData.name)
+      };
+
       if (isLogin) {
-        response = await login(formData.email, formData.password);
+        response = await login(sanitizedData.email, sanitizedData.password);
       } else {
-        response = await register(formData.name, formData.email, formData.password);
+        response = await register(sanitizedData.name, sanitizedData.email, sanitizedData.password);
       }
       
       // Success - close modal
@@ -135,6 +142,18 @@ const LoginModal = ({ isOpen, onClose }) => {
           errorMessage = t('auth.errors.emailExists', 'Este email ya está registrado');
         } else if (error.message.includes('Cuenta desactivada')) {
           errorMessage = t('auth.errors.accountDisabled', 'Cuenta desactivada');
+        } else if (error.message.includes('Name is required')) {
+          errorMessage = t('auth.errors.nameRequired', 'El nombre es requerido');
+        } else if (error.message.includes('Name must be at least 2 characters')) {
+          errorMessage = t('auth.errors.nameMinLength', 'El nombre debe tener al menos 2 caracteres');
+        } else if (error.message.includes('Name must not exceed 100 characters')) {
+          errorMessage = t('auth.errors.nameMaxLength', 'El nombre no puede exceder 100 caracteres');
+        } else if (error.message.includes('Name can only contain')) {
+          errorMessage = t('auth.errors.nameInvalidChars', 'El nombre solo puede contener letras, espacios, guiones y apóstrofes');
+        } else if (error.message.includes('Name must contain at least one letter')) {
+          errorMessage = t('auth.errors.nameMustHaveLetter', 'El nombre debe contener al menos una letra');
+        } else if (error.message.includes('Name cannot contain multiple consecutive spaces')) {
+          errorMessage = t('auth.errors.nameMultipleSpaces', 'El nombre no puede contener espacios múltiples consecutivos');
         } else {
           errorMessage = error.message;
         }

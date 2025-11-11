@@ -133,6 +133,51 @@ def validate_username(username: str) -> Tuple[bool, Optional[str]]:
     return True, None
 
 
+def validate_full_name(name: str) -> Tuple[bool, Optional[str]]:
+    """
+    Valida nombre completo de una persona.
+
+    Requisitos:
+    - 2-100 caracteres
+    - Permite letras (con tildes y acentos), espacios, guiones y apóstrofes
+    - No puede empezar/terminar con espacios o caracteres especiales
+    - Debe contener al menos una letra
+
+    Args:
+        name: Nombre completo a validar
+
+    Returns:
+        (is_valid, error_message)
+    """
+    if not name or not isinstance(name, str):
+        return False, "Name is required"
+
+    # Limpiar espacios al inicio y final
+    name = name.strip()
+
+    if len(name) < 2:
+        return False, "Name must be at least 2 characters long"
+
+    if len(name) > 100:
+        return False, "Name must not exceed 100 characters"
+
+    # Permitir letras (incluidas con tildes), espacios, guiones y apóstrofes
+    # \p{L} permite letras Unicode (incluye á, é, í, ó, ú, ñ, etc.)
+    # Usando regex más permisivo para nombres internacionales
+    if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-'\.]+$", name):
+        return False, "Name can only contain letters, spaces, hyphens and apostrophes"
+
+    # Verificar que contenga al menos una letra
+    if not re.search(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]', name):
+        return False, "Name must contain at least one letter"
+
+    # No permitir múltiples espacios consecutivos
+    if '  ' in name:
+        return False, "Name cannot contain multiple consecutive spaces"
+
+    return True, None
+
+
 def sanitize_text_input(text: str, max_length: int = 10000) -> str:
     """
     Sanitiza texto removiendo caracteres peligrosos.
