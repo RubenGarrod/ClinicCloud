@@ -3,7 +3,7 @@ uvicorn==0.23.2
 psycopg2-binary==2.9.7
 pydantic==2.12.4
 pydantic-settings==2.0.3
-huggingface-hub==0.16.4
+huggingface-hub==1.1.4
 transformers==4.30.2
 sentence-transformers==2.2.2
 python-dotenv==1.0.0
