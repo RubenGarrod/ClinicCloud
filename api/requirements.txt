@@ -4,7 +4,7 @@ psycopg2-binary==2.9.11
 pydantic==2.12.4
 python-dotenv==1.2.1
 sentence-transformers==2.2.2
-numpy==1.25.2
+numpy==2.3.4
 httpx
 
 # Dependencias para autenticación
