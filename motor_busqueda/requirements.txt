@@ -7,5 +7,5 @@ huggingface-hub==0.16.4
 transformers==4.30.2
 sentence-transformers==2.2.2
 python-dotenv==1.0.0
-numpy==1.25.2
+numpy==2.3.4
 pgvector
