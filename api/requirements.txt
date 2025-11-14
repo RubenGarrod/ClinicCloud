@@ -15,7 +15,7 @@ email-validator==2.3.0
 
 # Rate Limiting
 fastapi-limiter==0.1.5
-redis==4.6.0
+redis==7.0.1
 
 # Connection Pooling
 psycopg2-pool==1.1
