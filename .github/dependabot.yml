@@ -9,7 +9,14 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      frontend-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
     labels:
       - "dependencies"
       - "frontend"
@@ -23,7 +30,14 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      api-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
     labels:
       - "dependencies"
       - "backend"
@@ -37,7 +51,14 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      search-engine-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
     labels:
       - "dependencies"
       - "search-engine"
@@ -51,7 +72,14 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      scraper-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
     labels:
       - "dependencies"
       - "scraper"
