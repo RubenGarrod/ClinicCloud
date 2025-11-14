@@ -1,8 +1,8 @@
 fastapi==0.101.0
 uvicorn==0.23.2
-psycopg2-binary==2.9.7
-pydantic==2.1.1
-python-dotenv==1.0.0
+psycopg2-binary==2.9.11
+pydantic==2.12.4
+python-dotenv==1.2.1
 sentence-transformers==2.2.2
 numpy==1.25.2
 httpx
@@ -11,7 +11,7 @@ httpx
 PyJWT==2.8.0
 bcrypt==4.0.1
 asyncpg==0.29.0
-email-validator==2.1.0
+email-validator==2.3.0
 
 # Rate Limiting
 fastapi-limiter==0.1.5
